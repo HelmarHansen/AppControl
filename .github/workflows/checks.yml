@@ -17,6 +17,9 @@ jobs:
   plattformunabhaengig:
     name: Signaling · Krypto · Konsistenz
     runs-on: ubuntu-latest
+    # Alle vier Prüfungen zusammen laufen in unter einer Minute. Zehn Minuten
+    # sind reichlich Puffer und brechen trotzdem früh ab, wenn ein Runner hängt.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +58,11 @@ jobs:
   host-windows:
     name: Windows-Host bauen und testen
     runs-on: windows-latest
+    # NuGet-Restore braucht kalt ~60 s, Build und Tests je unter einer Minute.
+    # Der Wert fängt vor allem hängende Runner ab: Am 6.8. verbrachte dieser Job
+    # zehn Minuten in "Set up job", weil GitHubs Action-Download-Dienst mit
+    # "Service Unavailable" antwortete - Zeit, die niemandem nützt.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -98,6 +106,9 @@ jobs:
   viewer-macos:
     name: macOS-Viewer bauen und testen
     runs-on: macos-14
+    # Großzügiger als die anderen: Ohne Cache lädt SwiftPM das ~250 MB große
+    # WebRTC.xcframework herunter, was allein zehn Minuten dauern kann.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
