@@ -118,6 +118,7 @@ dotnet run --project src/AppControl.Host
 cd viewer-macos && swift build -c release && .build/release/AppControlViewer
 ```
 
+Schritt für Schritt auf beiden Rechnern: [`SETUP.md`](SETUP.md).
 Ausführlich, inklusive TLS-Deployment und TURN:
 [`docs/06-build-and-run.md`](docs/06-build-and-run.md).
 

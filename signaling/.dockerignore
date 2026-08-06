@@ -1,0 +1,6 @@
+node_modules
+dist
+dist-test
+test
+*.log
+tsconfig.test.json

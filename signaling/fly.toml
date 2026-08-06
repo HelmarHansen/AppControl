@@ -1,0 +1,41 @@
+# Fly.io-Deployment fuer den AppControl-Signaling-Server.
+#
+# Nutzung:
+#   fly launch --name <dein-name> --copy-config --no-deploy
+#   fly deploy
+#
+# TLS uebernimmt Fly automatisch - die WebSocket-URL ist danach
+#   wss://<dein-name>.fly.dev/ws
+
+app = "appcontrol-signal"
+primary_region = "fra"          # Frankfurt; naechstgelegene Region waehlen
+
+[build]
+
+[env]
+  PORT = "8787"
+  LOG_LEVEL = "info"
+  # TURN bleibt zunaechst aus. Erst aktivieren, wenn eine Verbindung
+  # nachweislich keinen P2P-Pfad findet - siehe docs/06-build-and-run.md §6.1.
+
+[http_service]
+  internal_port = 8787
+  force_https = true            # kein unverschluesseltes ws://
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # 0 statt 1: Die Maschine darf komplett herunterfahren, wenn niemand
+  # verbunden ist. Der erste Verbindungsversuch weckt sie (~2 s Verzoegerung).
+  # Fuer ein Werkzeug, das ein paarmal pro Woche benutzt wird, ist das der
+  # Unterschied zwischen "kostet nichts" und "kostet jeden Monat".
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "3s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"              # Der Server haelt keinen Zustand; das reicht reichlich.
