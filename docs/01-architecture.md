@@ -290,7 +290,7 @@ AppControl/
 │   └── src/AppControl.Host/
 │       ├── Core/               # SessionStateMachine — die zentrale Wahrheit
 │       ├── Capture/            # Windows.Graphics.Capture + Fensterauswahl
-│       ├── Encoding/           # Media Foundation H.264
+│       ├── Media/              # Media Foundation H.264
 │       ├── Input/              # SendInput, InputGuard, Emergency-Hotkey
 │       ├── Net/                # Signaling-Client, WebRTC-Peer
 │       ├── Security/           # Identität, Handshake, Trust-Store, SAS

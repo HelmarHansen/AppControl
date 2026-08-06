@@ -1,7 +1,7 @@
 using Windows.Graphics;
 using Windows.Graphics.DirectX.Direct3D11;
 
-namespace AppControl.Host.Encoding;
+namespace AppControl.Host.Media;
 
 /// <summary>Ein kodiertes Videopaket im Annex-B-Format (Startcodes 00 00 00 01).</summary>
 public sealed record EncodedFrame(

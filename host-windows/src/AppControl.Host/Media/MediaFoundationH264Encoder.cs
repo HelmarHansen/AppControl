@@ -1,7 +1,7 @@
 using Windows.Graphics.DirectX.Direct3D11;
 using Microsoft.Extensions.Logging;
 
-namespace AppControl.Host.Encoding;
+namespace AppControl.Host.Media;
 
 /// <summary>
 /// H.264-Encoder ueber Media Foundation.
@@ -23,7 +23,13 @@ public sealed class MediaFoundationH264Encoder : IVideoEncoder
     private bool _keyframeRequested;
     private bool _initialized;
 
+    // CS0067 bewusst unterdrueckt: FrameEncoded wird ausgeloest, sobald
+    // EncodeFrame tatsaechlich kodiert - der Kodiervorgang ist derzeit als
+    // PLATZHALTER mit Implementierungsleitfaden ausgefuehrt. Das Event gehoert
+    // zur IVideoEncoder-Schnittstelle und wird vom SessionController abonniert.
+#pragma warning disable CS0067
     public event Action<EncodedFrame>? FrameEncoded;
+#pragma warning restore CS0067
 
     public EncoderSettings CurrentSettings => _settings;
 

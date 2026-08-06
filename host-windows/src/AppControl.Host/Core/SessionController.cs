@@ -3,7 +3,7 @@ using System.Windows;
 using AppControl.Host.Audit;
 using AppControl.Host.Capture;
 using AppControl.Host.Config;
-using AppControl.Host.Encoding;
+using AppControl.Host.Media;
 using AppControl.Host.Input;
 using AppControl.Host.Net;
 using AppControl.Host.Security;

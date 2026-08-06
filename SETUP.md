@@ -124,11 +124,19 @@ swift --version              # >= 5.9
 
 ```bash
 cd viewer-macos
-swift build -c release
+swift test          # übersetzt den Code und prüft Krypto, Protokoll, Tastenabbildung
 ```
 
-Der erste Build lädt `WebRTC.xcframework` (~250 MB) — das dauert 10–15 Minuten
+Der erste Lauf lädt `WebRTC.xcframework` (~250 MB) — das dauert 10–15 Minuten
 und passiert genau einmal.
+
+> **`swift build -c release` schlägt derzeit beim Linken fehl.** Der Swift-Code
+> übersetzt vollständig, aber das Linken der ausführbaren Datei findet
+> `RTCMTLNSVideoView` aus dem WebRTC-Framework nicht. Der dokumentierte Weg,
+> `stasel/WebRTC` zu nutzen, ist ein **Xcode-App-Projekt**, das das Framework
+> einbettet und signiert — und das brauchst du für ein `.app` mit Icon und
+> Info.plist ohnehin. Anleitung:
+> [`Packaging/README.md`](viewer-macos/Packaging/README.md).
 
 ### Tests
 
@@ -202,7 +210,7 @@ Zwei Stellen fehlen, beide mit schrittweisem Leitfaden im Quelltext:
 | Stelle | Aufwand | Wirkung |
 |---|---|---|
 | `Capture/D3D11Helper.CreateDevice()` | ~1 h | Ohne sie startet die App nicht |
-| `Encoding/MediaFoundationH264Encoder` | ~1–2 Tage | Ohne ihn steht die Verbindung, aber es kommt kein Bild an |
+| `Media/MediaFoundationH264Encoder` | ~1–2 Tage | Ohne ihn steht die Verbindung, aber es kommt kein Bild an |
 
 Sobald beide stehen, ist das System vollständig benutzbar. Alles andere — Consent,
 Overlay, Gates, Krypto, Netzwerk, Tray, App-Picker — ist fertig.

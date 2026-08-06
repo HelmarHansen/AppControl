@@ -8,7 +8,7 @@ Anwendung. Jede trägt einen schrittweisen Leitfaden im Quelltext.
 | # | Stelle | Aufwand | Blockiert |
 |---|---|---|---|
 | 1 | `Capture/D3D11Helper.CreateDevice()` | ~1 h | **Alles.** Ohne D3D-Device startet der Host nicht. |
-| 2 | `Encoding/MediaFoundationH264Encoder` | ~1–2 Tage | Den Videostrom. Ohne ihn steht die Verbindung, aber es kommt kein Bild an. |
+| 2 | `Media/MediaFoundationH264Encoder` | ~1–2 Tage | Den Videostrom. Ohne ihn steht die Verbindung, aber es kommt kein Bild an. |
 | 3 | `Capture/WindowThumbnailProvider` | ~4 h | Nur die Live-Vorschau im App-Picker. Auswahl funktioniert auch mit Platzhalter-Kacheln. |
 | 4 | Cursorform im Viewer | ~2 h | Nichts. Reines Komfort-Feature. |
 

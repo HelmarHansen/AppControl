@@ -71,7 +71,7 @@ sauberen Verbindung fließt nach dem allerersten I-Frame nur noch Delta.
 | **AV1** | Bestbietende Kompression, aber Hardware-Encoding erst ab Intel Arc / RTX 40 / RDNA3. Software-AV1 ist für Echtzeit zu langsam. In 3–4 Jahren die richtige Wahl. |
 | **VP8/VP9** | Universelle WebRTC-Unterstützung, aber auf Windows fast nie hardwarebeschleunigt → CPU-Last. Sinnvoll nur als Notfall-Fallback. |
 
-Der Code ist deshalb hinter `IVideoEncoder` abstrahiert (`Encoding/IVideoEncoder.cs`) — der Codec
+Der Code ist deshalb hinter `IVideoEncoder` abstrahiert (`Media/IVideoEncoder.cs`) — der Codec
 ist austauschbar, ohne die Capture- oder Netzwerkschicht anzufassen.
 
 ---

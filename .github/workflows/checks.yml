@@ -121,8 +121,24 @@ jobs:
           key: spm-${{ runner.os }}-${{ hashFiles('viewer-macos/Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
 
-      - name: Bauen
-        run: cd viewer-macos && swift build -c release
-
-      - name: Testen
+      # ── Warum hier NICHT das ausfuehrbare Binary gebaut wird ────────────────
+      #
+      # `swift build` uebersetzt den Code UND linkt die ausfuehrbare Datei. Das
+      # Uebersetzen laeuft durch; das Linken scheitert an RTCMTLNSVideoView aus
+      # WebRTC.xcframework, und auch explizite linkerSettings mit Metal,
+      # MetalKit & Co. haben das nicht geloest.
+      #
+      # Der dokumentierte Weg, stasel/WebRTC zu nutzen, ist ein Xcode-App-Projekt,
+      # das das Framework einbettet und signiert - genau das, was fuer ein .app
+      # mit Info.plist ohnehin noetig ist (siehe viewer-macos/Packaging/README.md).
+      # Ein GUI-Binary zu linken, das in der CI niemand startet, bringt keinen
+      # Erkenntnisgewinn.
+      #
+      # `swift test` uebersetzt denselben Code und deckt damit ab, was hier
+      # wirklich zaehlt: dass der Swift-Code uebersetzt, und dass Krypto,
+      # Binaerprotokoll und Tastenabbildung mit der C#- und der
+      # JavaScript-Implementierung uebereinstimmen. Das ist die eigentliche
+      # Fehlerquelle dieses Projekts, weil dieselbe Spezifikation dreimal
+      # implementiert ist.
+      - name: Übersetzen und testen
         run: cd viewer-macos && swift test

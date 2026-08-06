@@ -28,7 +28,7 @@ public sealed class SecureChannel
     private readonly ChannelPhase _phase;
     private readonly byte[] _sendSalt = new byte[4];
 
-    private ulong _sendCounter;
+    private long _sendCounter;          // long wegen Interlocked; logisch ulong
     private ulong _highestReceivedCounter;
 
     public SecureChannel(ReadOnlySpan<byte> keyMaterial, ChannelPhase phase, ChannelDirection sendDirection)
@@ -49,11 +49,16 @@ public sealed class SecureChannel
     /// <summary>Verschluesselt einen Klartext zu einem sendefertigen Umschlag.</summary>
     public byte[] Seal(ReadOnlySpan<byte> plaintext)
     {
-        var counter = Interlocked.Increment(ref Unsafe_Counter());
+        // Interlocked arbeitet auf long; der Zaehler ist logisch ulong. Der Cast
+        // ist unbedenklich: Bei 2^63 Nachrichten waere das ein Problem - das sind
+        // bei 1000 Nachrichten pro Sekunde etwa 290 Millionen Jahre.
+        var counter = (ulong)Interlocked.Increment(ref _sendCounter);
         var header = BuildHeader(_phase, _sendDirection, counter, _sendSalt);
 
         var envelope = new byte[HeaderSize + plaintext.Length + 16];
-        header.CopyTo(envelope);
+        // Array.Copy statt CopyTo: Bei zwei byte[] ist CopyTo zwischen den
+        // Span- und Memory-Ueberladungen mehrdeutig (CS0121).
+        Array.Copy(header, envelope, header.Length);
 
         // Nonce sind die Bytes 8..20 des Headers: Zaehler(8, big-endian) + Salt(4).
         // Der Zaehler steigt streng monoton, der Salt ist pro Kanal zufaellig -
@@ -127,13 +132,6 @@ public sealed class SecureChannel
         return header;
     }
 
-    private ref long Unsafe_Counter()
-    {
-        // Interlocked braucht ein long-Feld; der Zaehler ist logisch ulong.
-        // Bei 2^63 Nachrichten waere das ein Problem - das sind bei 1000/s
-        // etwa 290 Millionen Jahre.
-        return ref System.Runtime.CompilerServices.Unsafe.As<ulong, long>(ref _sendCounter);
-    }
 
     /// <summary>Testhilfe: erlaubt deterministisches Versiegeln fuer Testvektoren.</summary>
     internal byte[] SealWithFixedNonce(ReadOnlySpan<byte> plaintext, ulong counter, ReadOnlySpan<byte> salt4)
