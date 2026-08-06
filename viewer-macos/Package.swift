@@ -30,11 +30,37 @@ let package = Package(
                 .product(name: "WebRTC", package: "WebRTC"),
                 .product(name: "Crypto", package: "swift-crypto"),
             ],
-            path: "Sources/AppControlViewer"
+            path: "Sources/AppControlViewer",
             // Bewusst KEINE resources: Das Info.plist liegt unter Packaging/ und
             // gehoert zum Xcode-App-Projekt, nicht ins SwiftPM-Ressourcenbuendel.
             // SwiftPM lehnt ein Info.plist als Top-Level-Ressource ausdruecklich
             // ab - es wuerde mit dem Bundle-eigenen kollidieren.
+
+            // ── Explizites Framework-Linking ─────────────────────────────────
+            //
+            // WebRTC.xcframework traegt Auto-Link-Direktiven, die auf macOS
+            // unvollstaendig aufgehen: Der Linker meldet
+            //   "Could not find or use auto-linked framework 'CoreAudioTypes'"
+            // und bricht das Auto-Linking danach ab. Als Folge bleiben
+            // Objective-C-Klassen aus dem Framework unaufgeloest, allen voran
+            // RTCMTLNSVideoView aus Video/VideoRenderView.swift.
+            //
+            // Die Frameworks hier explizit zu nennen macht das Linken unabhaengig
+            // vom Auto-Linking. Metal und MetalKit braucht der Renderer,
+            // VideoToolbox den Hardware-Decoder, die Audio-Frameworks zieht
+            // WebRTC selbst nach - auch wenn AppControl kein Audio uebertraegt.
+            linkerSettings: [
+                .linkedFramework("Metal"),
+                .linkedFramework("MetalKit"),
+                .linkedFramework("CoreMedia"),
+                .linkedFramework("CoreVideo"),
+                .linkedFramework("CoreGraphics"),
+                .linkedFramework("VideoToolbox"),
+                .linkedFramework("AVFoundation"),
+                .linkedFramework("AudioToolbox"),
+                .linkedFramework("CoreAudio"),
+                .linkedFramework("AppKit"),
+            ]
         ),
         .testTarget(
             name: "AppControlViewerTests",

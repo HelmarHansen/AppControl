@@ -39,6 +39,27 @@
 
   <ItemGroup>
     <!--
+      KOLLISION DER IMPLIZITEN USINGS AUFLOESEN.
+
+      Das Projekt hat UseWPF=true UND UseWindowsForms=true (Letzteres nur wegen
+      NotifyIcon fuer das Tray-Icon). Beide SDKs steuern eigene implizite Usings
+      bei, und die kollidieren:
+
+          Application  ->  System.Windows.Application   vs. System.Windows.Forms.Application
+          Point        ->  System.Windows.Point         vs. System.Drawing.Point
+
+      Statt in jeder betroffenen Datei Alias-Direktiven zu setzen, werden die
+      beiden WinForms-seitigen Usings global entfernt. Die WPF-Bedeutung ist im
+      ganzen Projekt die richtige - WinForms wird nur an zwei Stellen gebraucht
+      (Ui/TrayIcon.cs und Capture/WindowEnumerator.cs), und beide deklarieren
+      ihre Usings ohnehin explizit bzw. qualifizieren voll aus.
+    -->
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
       WebRTC: rein verwaltet, kein natives Build noetig. Siehe docs/02-tech-stack.md §2.5
 
       MINDESTVERSION 10.0.9 IST EINE SICHERHEITSANFORDERUNG, KEINE KOSMETIK:
