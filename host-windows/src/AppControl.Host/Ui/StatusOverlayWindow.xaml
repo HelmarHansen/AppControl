@@ -1,0 +1,88 @@
+<Window x:Class="AppControl.Host.Ui.StatusOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AppControl — Freigabestatus"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight" WindowStartupLocation="Manual">
+
+    <!--
+      Das permanente Statusband. Solange geteilt wird, ist es sichtbar - es laesst
+      sich nicht schliessen, und ein Watchdog stellt es wieder her, wenn es
+      verschwindet. Siehe docs/03-consent-and-transparency.md §3.4.
+
+      Die Farbe traegt KEINE Information allein: Die Textlabels sind eindeutig,
+      damit das auch bei Farbfehlsichtigkeit funktioniert.
+    -->
+    <Border x:Name="RootBorder" CornerRadius="8" Padding="14,8" Margin="10"
+            Background="#DC2626" BorderBrush="#FCA5A5" BorderThickness="1.5">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.5" Color="Black"/>
+        </Border.Effect>
+
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+            <!-- Zustandsanzeige -->
+            <Ellipse x:Name="LiveDot" Width="11" Height="11" Fill="White"
+                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBlock x:Name="StateText" Text="LIVE" Foreground="White" FontWeight="Bold"
+                       FontSize="13" VerticalAlignment="Center"/>
+
+            <Rectangle Width="1" Fill="#80FFFFFF" Margin="12,2"/>
+
+            <!-- WAS geteilt wird -->
+            <TextBlock Text="🖥" FontSize="13" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBlock x:Name="ScopeText" Text="—" Foreground="White" FontSize="13"
+                       VerticalAlignment="Center" MaxWidth="280" TextTrimming="CharacterEllipsis"/>
+
+            <Rectangle Width="1" Fill="#80FFFFFF" Margin="12,2"/>
+
+            <!-- OB gesteuert wird -->
+            <Border x:Name="ControlBadge" CornerRadius="4" Padding="6,2" Background="#7F1D1D">
+                <TextBlock x:Name="ControlText" Text="NUR ANSICHT" Foreground="White"
+                           FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </Border>
+
+            <Rectangle Width="1" Fill="#80FFFFFF" Margin="12,2"/>
+
+            <!-- WER zusieht -->
+            <TextBlock Text="👤" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBlock x:Name="PeerText" Text="—" Foreground="White" FontSize="12"
+                       VerticalAlignment="Center" MaxWidth="160" TextTrimming="CharacterEllipsis"/>
+
+            <TextBlock x:Name="ElapsedText" Text="0:00" Foreground="#E5E7EB" FontSize="12"
+                       VerticalAlignment="Center" Margin="12,0,0,0" FontFamily="Consolas"/>
+
+            <!-- Aktionen: die einzigen anklickbaren Bereiche des Fensters -->
+            <Button x:Name="PauseButton" Content="⏸ Pause" Margin="16,0,0,0" Padding="10,4"
+                    Click="OnPauseClick" Style="{DynamicResource OverlayButton}"/>
+            <Button x:Name="StopButton" Content="⏹ Beenden" Margin="8,0,0,0" Padding="10,4"
+                    Click="OnStopClick" Style="{DynamicResource OverlayButtonDanger}"/>
+        </StackPanel>
+    </Border>
+
+    <Window.Resources>
+        <Style x:Key="OverlayButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="OverlayButtonDanger" TargetType="Button" BasedOn="{StaticResource OverlayButton}">
+            <Setter Property="Background" Value="#111827"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+    </Window.Resources>
+</Window>

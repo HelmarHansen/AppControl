@@ -1,0 +1,27 @@
+# Node
+node_modules/
+dist/
+dist-test/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Swift / Xcode
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# Laufzeit-Artefakte (duerfen NIE eingecheckt werden)
+*.log
+audit/
+peers.json
+identity.key

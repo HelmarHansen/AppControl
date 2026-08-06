@@ -1,0 +1,81 @@
+<Window x:Class="AppControl.Host.Ui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AppControl — Host" Width="620" Height="600"
+        Background="#0F172A" WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="AppControl" FontSize="26" FontWeight="Bold" Foreground="White"/>
+            <TextBlock Text="Bildschirmfreigabe mit Steuerung — du behältst die Kontrolle."
+                       Foreground="#94A3B8" FontSize="13" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Zustandsanzeige -->
+        <Border Grid.Row="1" x:Name="StatusCard" Background="#1E293B" CornerRadius="10"
+                Padding="18" Margin="0,0,0,18">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="StatusDot" Width="12" Height="12" Fill="#64748B"
+                             VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="StatusText" Text="Nicht verbunden" FontSize="16"
+                               FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock x:Name="StatusDetail" Foreground="#94A3B8" FontSize="12" Margin="22,6,0,0"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Pairing -->
+        <Border Grid.Row="2" Background="#1E293B" CornerRadius="10" Padding="18" Margin="0,0,0,18">
+            <StackPanel>
+                <TextBlock Text="EINLADUNG" FontSize="10" FontWeight="Bold" Foreground="#94A3B8"/>
+
+                <TextBox x:Name="TicketBox" IsReadOnly="True" FontFamily="Consolas" FontSize="12"
+                         TextWrapping="Wrap" Margin="0,10,0,0" Padding="10" MinHeight="60"
+                         Background="#0F172A" Foreground="#7DD3FC" BorderBrush="#334155"/>
+
+                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#FCD34D" Margin="0,10,0,0"
+                           Text="⚠️  Schick diesen Code über einen sicheren Kanal (Signal, iMessage, Telefon) — NICHT über einen öffentlichen Chat. Wer den Code hat, kann eine Verbindung anfragen."/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button x:Name="NewTicketButton" Content="Neue Einladung erzeugen" Padding="14,7"
+                            Click="OnNewTicket"/>
+                    <Button x:Name="CopyTicketButton" Content="Kopieren" Padding="14,7" Margin="8,0,0,0"
+                            Click="OnCopyTicket"/>
+                    <Button x:Name="ConnectButton" Content="Auf Verbindung warten" Padding="14,7"
+                            Margin="8,0,0,0" Click="OnConnect"
+                            Background="#2563EB" Foreground="White" FontWeight="SemiBold"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Protokoll -->
+        <Border Grid.Row="3" Background="#1E293B" CornerRadius="10" Padding="18">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="SITZUNGSPROTOKOLL" FontSize="10"
+                           FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,0,10"/>
+                <ListBox x:Name="AuditList" Background="Transparent" BorderThickness="0"
+                         Foreground="#CBD5E1" FontFamily="Consolas" FontSize="11"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Notfall-Hinweis: immer sichtbar, damit er im Ernstfall bekannt ist -->
+        <Border Grid.Row="4" Background="#7F1D1D" CornerRadius="8" Padding="14" Margin="0,18,0,0">
+            <StackPanel>
+                <TextBlock Text="NOTFALL — Freigabe sofort beenden" FontSize="11" FontWeight="Bold"
+                           Foreground="#FECACA"/>
+                <TextBlock Foreground="#FEE2E2" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Text="Strg + Alt + Umschalt + X   ·   oder dreimal schnell die rechte Strg-Taste   ·   oder Rechtsklick auf das Tray-Symbol"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

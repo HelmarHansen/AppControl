@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>AppControl Viewer</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.appcontrol.viewer</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <!--
+      Erklärungstext für den Bedienungshilfen-Dialog. macOS zeigt ihn an, wenn
+      die App den systemweiten CGEventTap anfordert. Der Text muss ehrlich
+      benennen, wozu die Berechtigung dient — sie ist mächtig genug, dass eine
+      vage Formulierung unangemessen wäre.
+    -->
+    <key>NSAccessibilityUsageDescription</key>
+    <string>AppControl kann Tastenkombinationen wie Cmd+Tab an den Windows-Rechner weiterleiten, statt sie lokal in macOS auszuführen. Diese Berechtigung ist optional — ohne sie funktioniert alles außer diesen systemweiten Tastenkombinationen.</string>
+
+    <!-- Kein Autostart, kein Hintergrundbetrieb: Der Viewer ist eine normale,
+         sichtbare Anwendung. LSUIElement wäre hier genau falsch. -->
+    <key>LSUIElement</key>
+    <false/>
+</dict>
+</plist>

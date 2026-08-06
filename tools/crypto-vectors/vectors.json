@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "Testvektoren fuer den AppControl-Handshake (ac/1).",
+    "Erzeugt von tools/crypto-vectors/generate.mjs — NICHT von Hand bearbeiten.",
+    "Host (C#) und Viewer (Swift) muessen jeden dieser Werte reproduzieren."
+  ],
+  "protocol": "ac/1",
+  "x25519": {
+    "hostStaticPriv": "6b37582e8947fc8006c5f8f5bd6947e6584df447ec9ffd676945628d5569c392",
+    "hostStaticPub": "9385659ba4a4dab8061f859b9267ee82a1ce5cef9a8d13bed296b57b9d129f4e",
+    "hostEphPriv": "66fc884ac9e14846b358c8485132d320f3c3a3661b8265a36d0f29300798cef0",
+    "hostEphPub": "2836ba7d1250fc262c93f5880e57a9516311b7cb34a19f7439f9251b00383836",
+    "viewerStaticPriv": "174951458cc89a14e0f4b9d665cb2d2d93b24e441c5fe23431f51086a9d4f919",
+    "viewerStaticPub": "3d64bb65f79066b07f36a2f054ecb9400464b090aa0fd8bc8ae7549eba17cc72",
+    "viewerEphPriv": "6bd71159eb5f429e80ba902aacf3e5702df1191f04f7eb38d18ae697a9eab665",
+    "viewerEphPub": "8fd44074a3083bf696b348fbb946960e5c1dbd97ea26e57fb9a60ea7fb630b32"
+  },
+  "pairing": {
+    "psk": "53e51279bd040be0bf9d4301e7b6edd415fb87079b087d11989c47ab7bd818b4",
+    "roomId": "583978a3d3acc6f58cf44c3be7f3e5f6",
+    "handshakeKey": "8f7b57e083d537542df12eb61730a2bab125b468c62b77005955752b516e2f22"
+  },
+  "handshake": {
+    "nonceHost": "761e7b8fcc4cb9ab6fb2fa66ee2c54d8",
+    "nonceViewer": "52a3a9845369ddc554f550a6572ee109",
+    "dh1": "e6003634e8ded147ccb9ae6253e3b6868cf51e85c424f5b2c07f1d8bd3dbdb4e",
+    "dh2": "6536444c1220a2fa5bd8c612f84d2b21e012352710f0bf29d57e9e0d4dc18a13",
+    "dh3": "4554414b84e68d64b6b107a1800b5f67071e5c9bb23e1e11b06513e990588e27",
+    "salt": "9434540bd60458d63daab9b900d13f0e27cb63b33857f8535bc7cb4faa114afb",
+    "sessionKey": "73787cd0e3dba325db581dc53ce8fe51fb44fda2d3cbbae47d88ea490921ffde"
+  },
+  "sas": {
+    "bytes": "b4fab6826c",
+    "indices": [
+      52,
+      58,
+      54,
+      2,
+      44
+    ],
+    "emoji": [
+      "🚜",
+      "🦔",
+      "🐿",
+      "🚀",
+      "⛵"
+    ]
+  },
+  "envelope": {
+    "phase": 2,
+    "direction": 1,
+    "counter": 1,
+    "salt4": "608bfac5",
+    "header": "41433100020100000000000000000001608bfac5",
+    "plaintext": "eyJ0Ijoic2RwIiwia2luZCI6Im9mZmVyIiwic2RwIjoidj0wXHJcbm89LSAxIDEgSU4gSVA0IDAuMC4wLjBcclxuIn0=",
+    "sealed": "QUMxAAIBAAAAAAAAAAAAAWCL+sUrpsriTTp105L8JHX4Wk/kufTXBWD88JLxRr3o0CKQZTYk4fVeOibx/QhSY+udCTmRgWKzIJ4DcOgIepF/TKRMAVCmpNQx8REMA2l36Xj62eyQVWQ="
+  },
+  "hkdfCases": [
+    {
+      "ikm": "0000000000000000000000000000000000000000000000000000000000000000",
+      "salt": "",
+      "info": "ac/1 session",
+      "length": 32,
+      "out": "4c8919eca50ad5fea8d54da0bbe186d2cc6c0b4ed8c65f8e4bbe9a51bae55581"
+    },
+    {
+      "ikm": "00010203040506070809",
+      "salt": "aabb",
+      "info": "ac/1 sas",
+      "length": 5,
+      "out": "ba77f81d4a"
+    }
+  ]
+}

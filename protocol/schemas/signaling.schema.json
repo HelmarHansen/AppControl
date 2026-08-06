@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://appcontrol.local/schemas/signaling.json",
+  "title": "AppControl signaling (WebSocket)",
+  "description": "Nachrichten zwischen Client und Rendezvous-Server. Siehe docs/04-protocol.md §4.1. Der Server sieht NUR diese Hülle — 'payload' ist für ihn eine undurchsichtige Zeichenkette.",
+
+  "$defs": {
+    "clientMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["t", "roomId", "role"],
+          "properties": {
+            "t":      { "const": "join" },
+            "roomId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{16,128}$",
+                        "description": "Öffentliche Hälfte des Pairing-Tickets. Alphabet bewusst so gewählt, dass sie sich gefahrlos loggen lässt." },
+            "role":   { "enum": ["host", "viewer"] },
+            "v":      { "type": "string", "description": "Protokollversion, z. B. 'ac/1'" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t", "payload"],
+          "properties": {
+            "t":       { "const": "relay" },
+            "payload": { "type": "string", "maxLength": 131072,
+                         "contentEncoding": "base64",
+                         "description": "Ende-zu-Ende-verschlüsselter Umschlag. Der Server darf ihn niemals dekodieren, interpretieren oder protokollieren." }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t"],
+          "properties": { "t": { "const": "leave" } }
+        }
+      ]
+    },
+
+    "serverMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["t", "roomId", "peerPresent"],
+          "properties": {
+            "t":           { "const": "joined" },
+            "roomId":      { "type": "string" },
+            "peerPresent": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t", "role"],
+          "properties": {
+            "t":    { "enum": ["peer-joined", "peer-left"] },
+            "role": { "enum": ["host", "viewer"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t", "payload"],
+          "properties": {
+            "t":       { "const": "relay" },
+            "payload": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t", "servers"],
+          "properties": {
+            "t": { "const": "ice-servers" },
+            "servers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["urls"],
+                "properties": {
+                  "urls":       { "type": "array", "items": { "type": "string" } },
+                  "username":   { "type": "string",
+                                  "description": "Bei TURN: '<unix-ablaufzeit>:<bezeichner>' — kurzlebig, damit in der App kein Passwort steht." },
+                  "credential": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t", "code", "message", "fatal"],
+          "properties": {
+            "t":    { "const": "error" },
+            "code": { "enum": ["bad-request", "room-full", "role-taken", "rate-limited",
+                               "payload-too-large", "unsupported-version", "not-joined"] },
+            "message": { "type": "string" },
+            "fatal":   { "type": "boolean",
+                         "description": "true, wenn der Server die Verbindung anschließend schließt." }
+          }
+        }
+      ]
+    }
+  }
+}

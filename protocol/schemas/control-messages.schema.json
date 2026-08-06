@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://appcontrol.local/schemas/control-messages.json",
+  "title": "AppControl ac-control DataChannel messages",
+  "description": "Nachrichten des reliable-ordered DataChannels 'ac-control'. Siehe docs/04-protocol.md §4.4.",
+
+  "oneOf": [
+    { "$ref": "#/$defs/shareState" },
+    { "$ref": "#/$defs/controlState" },
+    { "$ref": "#/$defs/inputRejected" },
+    { "$ref": "#/$defs/cursor" },
+    { "$ref": "#/$defs/stats" },
+    { "$ref": "#/$defs/requestControl" },
+    { "$ref": "#/$defs/requestKeyframe" },
+    { "$ref": "#/$defs/viewport" },
+    { "$ref": "#/$defs/ping" },
+    { "$ref": "#/$defs/pong" },
+    { "$ref": "#/$defs/bye" }
+  ],
+
+  "$defs": {
+    "scopeInfo": {
+      "type": "object",
+      "description": "Was gerade freigegeben ist. Der Viewer zeigt title unverändert an.",
+      "required": ["kind", "title", "width", "height"],
+      "properties": {
+        "kind":   { "enum": ["window", "screen"] },
+        "title":  { "type": "string", "maxLength": 512 },
+        "width":  { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+
+    "shareState": {
+      "type": "object",
+      "description": "Host → Viewer. Bei JEDER Zustandsänderung gesendet und die EINZIGE Quelle für das, was der Viewer anzeigt. Ein stehendes Bild wegen Netzproblemen sieht sonst identisch aus wie eine bewusste Pause.",
+      "required": ["t", "state", "controlGranted", "elapsedSec"],
+      "properties": {
+        "t":              { "const": "share-state" },
+        "state":          { "enum": ["sharing", "paused", "stopped"] },
+        "scope":          { "oneOf": [{ "$ref": "#/$defs/scopeInfo" }, { "type": "null" }] },
+        "controlGranted": { "type": "boolean" },
+        "elapsedSec":     { "type": "integer", "minimum": 0 },
+        "remainingSec":   { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+
+    "controlState": {
+      "type": "object",
+      "description": "Host → Viewer. Steuerung erteilt oder entzogen, mit Grund für die Anzeige.",
+      "required": ["t", "granted", "reason"],
+      "properties": {
+        "t":       { "const": "control-state" },
+        "granted": { "type": "boolean" },
+        "reason": {
+          "enum": ["host-granted", "host-revoked", "idle-timeout",
+                   "window-not-focused", "host-paused"]
+        }
+      }
+    },
+
+    "inputRejected": {
+      "type": "object",
+      "description": "Host → Viewer. Ein Event wurde von einem Gate verworfen. Erlaubt dem Viewer zu erklären, warum nichts passiert, statt still zu versagen.",
+      "required": ["t", "gate", "reason", "count"],
+      "properties": {
+        "t":    { "const": "input-rejected" },
+        "gate": { "type": "integer", "minimum": 0, "maximum": 5,
+                  "description": "Nummer des Gates aus docs/03 §3.7" },
+        "reason": {
+          "enum": ["session-not-sharing", "control-not-granted",
+                   "target-window-not-foreground", "target-rect-invalid",
+                   "key-blocked-by-policy", "rate-limited"]
+        },
+        "count": { "type": "integer", "minimum": 1,
+                   "description": "Gebündelte Anzahl seit der letzten Meldung" }
+      }
+    },
+
+    "cursor": {
+      "type": "object",
+      "description": "Host → Viewer. Cursorform, damit der Viewer den passenden Zeiger zeigt.",
+      "required": ["t", "shape", "visible"],
+      "properties": {
+        "t":     { "const": "cursor" },
+        "shape": { "enum": ["arrow", "ibeam", "hand", "resize-ns", "resize-ew", "wait"] },
+        "visible": { "type": "boolean" }
+      }
+    },
+
+    "stats": {
+      "type": "object",
+      "description": "Host → Viewer. Telemetrie für die Statusanzeige.",
+      "required": ["t"],
+      "properties": {
+        "t":           { "const": "stats" },
+        "fps":         { "type": "number", "minimum": 0 },
+        "bitrateKbps": { "type": "integer", "minimum": 0 },
+        "rttMs":       { "type": "number", "minimum": 0 },
+        "encodeMs":    { "type": "number", "minimum": 0 },
+        "packetsLost": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "requestControl": {
+      "type": "object",
+      "description": "Viewer → Host. Bitte um Steuerung. Der Host muss erneut bestätigen — die Nachricht erteilt nichts.",
+      "required": ["t"],
+      "properties": { "t": { "const": "request-control" } }
+    },
+
+    "requestKeyframe": {
+      "type": "object",
+      "description": "Viewer → Host. Vollständiges Einzelbild anfordern, zusätzlich zu RTCP-PLI.",
+      "required": ["t"],
+      "properties": { "t": { "const": "request-keyframe" } }
+    },
+
+    "viewport": {
+      "type": "object",
+      "description": "Viewer → Host. Neue Fenstergröße; der Host passt die Encoder-Auflösung an.",
+      "required": ["t", "width", "height"],
+      "properties": {
+        "t":      { "const": "viewport" },
+        "width":  { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "scale":  { "type": "number", "minimum": 0.5, "maximum": 4.0 }
+      }
+    },
+
+    "ping": {
+      "type": "object",
+      "required": ["t", "id", "tsMicros"],
+      "properties": {
+        "t":        { "const": "ping" },
+        "id":       { "type": "integer" },
+        "tsMicros": { "type": "integer" }
+      }
+    },
+
+    "pong": {
+      "type": "object",
+      "required": ["t", "id", "tsMicros"],
+      "properties": {
+        "t":        { "const": "pong" },
+        "id":       { "type": "integer" },
+        "tsMicros": { "type": "integer",
+                      "description": "Unverändert aus dem ping übernommen — der Sender misst so den RTT ohne eigene Zuordnungstabelle." }
+      }
+    },
+
+    "bye": {
+      "type": "object",
+      "description": "Beidseitig. Beendet die Sitzung mit Angabe des Grundes, damit die Gegenseite einen Abbruch von einem Netzfehler unterscheiden kann.",
+      "required": ["t", "reason"],
+      "properties": {
+        "t":      { "const": "bye" },
+        "reason": { "type": "string", "maxLength": 64 }
+      }
+    }
+  }
+}
