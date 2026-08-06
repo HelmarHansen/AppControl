@@ -1,0 +1,34 @@
+<Application x:Class="AppControl.Host.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <!--
+      ShutdownMode="OnExplicitShutdown": Das Schliessen des Dashboards beendet die
+      Anwendung nicht - sie lebt im Tray weiter, damit eine laufende Freigabe nicht
+      versehentlich abbricht. Beendet wird ausschliesslich ueber das Tray-Menue.
+    -->
+    <Application.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#334155"/>
+            <Setter Property="Foreground" Value="#F1F5F9"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6"
+                                Padding="{TemplateBinding Padding}" Opacity="{TemplateBinding Opacity}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Application.Resources>
+</Application>

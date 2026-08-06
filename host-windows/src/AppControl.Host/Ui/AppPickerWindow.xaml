@@ -1,0 +1,61 @@
+<Window x:Class="AppControl.Host.Ui.AppPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AppControl — Was soll geteilt werden?"
+        Width="740" Height="560" WindowStartupLocation="CenterOwner"
+        Background="#0F172A" ResizeMode="CanResize">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Kopf mit Suche -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="Was soll dein Gegenüber sehen?" FontSize="18" FontWeight="SemiBold"
+                       Foreground="White" VerticalAlignment="Center"/>
+            <TextBox x:Name="SearchBox" Width="220" HorizontalAlignment="Right" Padding="8,5"
+                     TextChanged="OnSearchChanged" VerticalAlignment="Center"
+                     Background="#1E293B" Foreground="White" BorderBrush="#334155"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="ANWENDUNGEN" FontSize="10" FontWeight="Bold"
+                           Foreground="#94A3B8" Margin="0,0,0,8"/>
+                <ItemsControl x:Name="WindowList">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <TextBlock Text="GANZE BILDSCHIRME" FontSize="10" FontWeight="Bold"
+                           Foreground="#94A3B8" Margin="0,20,0,8"/>
+                <ItemsControl x:Name="MonitorList">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!--
+          Der Warnhinweis ist der Grund, warum wir einen eigenen Picker bauen
+          statt GraphicsCapturePicker zu verwenden: Windows' eigener Dialog kann
+          das nicht anzeigen. Siehe docs/03-consent-and-transparency.md §3.3.
+        -->
+        <Border Grid.Row="2" Background="#422006" CornerRadius="6" Padding="12" Margin="0,14,0,0">
+            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#FCD34D"
+                       Text="⚠️  Ein geteiltes Fenster zeigt alles, was darin erscheint — auch Benachrichtigungen, Dialoge und Inhalte, die du später öffnest."/>
+        </Border>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Abbrechen" Padding="20,8" Margin="0,0,10,0" IsCancel="True" Click="OnCancel"/>
+            <Button x:Name="ConfirmButton" Content="Diese teilen" Padding="20,8" IsEnabled="False"
+                    Click="OnConfirm" Background="#2563EB" Foreground="White" FontWeight="SemiBold"/>
+        </StackPanel>
+    </Grid>
+</Window>

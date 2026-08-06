@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+
+    <!--
+      Der Target-Framework-Moniker ist hier die zentrale Entscheidung:
+      Das Suffix "-windows10.0.19041.0" aktiviert C#/WinRT-Interop und macht damit
+      Windows.Graphics.Capture direkt aus WPF heraus nutzbar - ohne WinUI, ohne
+      MSIX-Paketierung, ohne Wrapper-Bibliothek. Siehe docs/02-tech-stack.md §2.3.
+    -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>   <!-- nur fuer NotifyIcon (Tray) -->
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>AppControl.Host</RootNamespace>
+    <AssemblyName>AppControl</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>   <!-- Frame-Zugriff ohne Kopie -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WebRTC: rein verwaltet, kein natives Build noetig. Siehe docs/02-tech-stack.md §2.5 -->
+    <PackageReference Include="SIPSorcery" Version="8.0.11" />
+
+    <!-- Krypto: duenner Wrapper ueber libsodium. Gegenstueck zu swift-crypto im Viewer. -->
+    <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
+
+    <!-- Direct3D/Media-Foundation-Interop fuer Capture und Encoder -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <PackageReference Include="Vortice.MediaFoundation" Version="3.6.2" />
+
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
