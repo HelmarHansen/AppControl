@@ -34,9 +34,17 @@
     <!-- Krypto: duenner Wrapper ueber libsodium. Gegenstueck zu swift-crypto im Viewer. -->
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
 
-    <!-- Direct3D/Media-Foundation-Interop fuer Capture und Encoder -->
-    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
-    <PackageReference Include="Vortice.MediaFoundation" Version="3.6.2" />
+    <!--
+      KEINE Wrapper-Bibliothek fuer Direct3D und Media Foundation.
+
+      Capture/D3D11Helper.cs und Encoding/MediaFoundationH264Encoder.cs sprechen
+      direkt per P/Invoke und COM-Interop mit den nativen APIs. Die Alternative
+      waere Vortice.* gewesen; dagegen sprach, dass es hier um wenige Dutzend
+      Aufrufe geht, deren native Signaturen stabil und gut dokumentiert sind.
+      Eine Abhaengigkeit von ~30 MB fuer drei Funktionen lohnt sich nicht - und
+      bei Interop ist es ohnehin hilfreich, genau zu sehen, was ueber die Grenze
+      geht.
+    -->
 
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
