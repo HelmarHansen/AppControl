@@ -76,7 +76,9 @@ public sealed class PeerConnectionManager : IAsyncDisposable
         // H.264 im Passthrough: SIPSorcery packetisiert nur, kodiert nicht.
         // Unser Media-Foundation-Encoder liefert bereits fertige NAL-Units.
         _videoTrack = new MediaStreamTrack(
-            new VideoFormat(VideoCodecsEnum.H264, payloadID: 102),
+            // 102 ist die Payload-ID im SDP. Positional statt benannt: Der
+            // Parametername unterscheidet sich zwischen SIPSorcery-Versionen.
+            new VideoFormat(VideoCodecsEnum.H264, 102),
             MediaStreamStatusEnum.SendOnly);
         _pc.addTrack(_videoTrack);
 

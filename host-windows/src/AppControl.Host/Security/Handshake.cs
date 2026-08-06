@@ -146,7 +146,14 @@ public static class Handshake
     }
 
     internal static byte[] Hkdf(ReadOnlySpan<byte> ikm, ReadOnlySpan<byte> salt, string info, int length)
-        => HKDF.DeriveKey(HashAlgorithmName.SHA256, ikm, length, salt, Encoding.UTF8.GetBytes(info));
+    {
+        // HKDF.DeriveKey hat zwei Ueberladungen: eine mit byte[] und
+        // Rueckgabewert, eine mit Spans und Ausgabepuffer. Mischen geht nicht -
+        // unsere Parameter sind Spans, also die Span-Variante.
+        var output = new byte[length];
+        HKDF.DeriveKey(HashAlgorithmName.SHA256, ikm, output, salt, Encoding.UTF8.GetBytes(info));
+        return output;
+    }
 
     public static Key GenerateEphemeral()
         => Key.Create(X25519, new KeyCreationParameters
