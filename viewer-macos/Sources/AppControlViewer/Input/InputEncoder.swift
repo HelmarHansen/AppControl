@@ -138,13 +138,17 @@ final class InputEncoder {
 // MARK: - Little-Endian-Anhängen
 
 private extension Data {
+    // `Swift.` ist hier zwingend: Innerhalb einer Data-Extension gewinnt die
+    // Instanzmethode Data.withUnsafeBytes(_:) die Überladungsauflösung gegen die
+    // globale Funktion Swift.withUnsafeBytes(of:_:). Ohne die Qualifizierung
+    // schlägt der Build fehl.
     mutating func appendLE(_ value: UInt16) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
     mutating func appendLE(_ value: UInt32) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
     mutating func appendLE(_ value: Float) {
-        withUnsafeBytes(of: value.bitPattern.littleEndian) { append(contentsOf: $0) }
+        Swift.withUnsafeBytes(of: value.bitPattern.littleEndian) { append(contentsOf: $0) }
     }
 }
