@@ -33,6 +33,9 @@ struct SessionView: View {
             bottomBar
         }
         .frame(minWidth: 800, minHeight: 500)
+        // Einparametrige Closure statt der neueren, parameterlosen Form:
+        // .onChange(of:) ohne Parameter gibt es erst ab macOS 14, und
+        // Package.swift deklariert macOS 13 als Untergrenze.
         .onChange(of: coordinator.lastRejection?.count) { _ in
             // Banner kurz zeigen und wieder ausblenden — eine Dauereinblendung
             // bei gehaltener Maus wäre nur noch Lärm.

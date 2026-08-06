@@ -59,7 +59,9 @@ final class SessionCoordinator: ObservableObject {
     private var pingId = 0
     private var pendingPings: [Int: Int64] = [:]
 
-    var settings = ViewerSettings.load()
+    /// @Published, damit die Einstellungen-Ansicht ueber durchreichende Bindings
+    /// direkt hierher schreiben kann und die UI die Aenderung sofort sieht.
+    @Published var settings = ViewerSettings.load()
 
     init() {
         wireEvents()
