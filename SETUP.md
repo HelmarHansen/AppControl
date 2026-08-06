@@ -161,9 +161,9 @@ andere funktioniert ohne.
 
 `swift build` erzeugt eine ausführbare Datei, kein `.app`. Für ein Icon im Dock
 und die Info.plist (die den Erklärungstext für die Bedienungshilfen enthält)
-brauchst du ein Xcode-App-Projekt, das dieses SwiftPM-Paket einbindet — siehe
-[`docs/06-build-and-run.md` §6.3](docs/06-build-and-run.md). Zum Ausprobieren
-reicht der Terminal-Start.
+brauchst du ein Xcode-App-Projekt, das dieses SwiftPM-Paket einbindet — Anleitung
+in [`viewer-macos/Packaging/README.md`](viewer-macos/Packaging/README.md). Zum
+Ausprobieren reicht der Terminal-Start.
 
 ---
 

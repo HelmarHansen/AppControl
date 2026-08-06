@@ -30,8 +30,11 @@ let package = Package(
                 .product(name: "WebRTC", package: "WebRTC"),
                 .product(name: "Crypto", package: "swift-crypto"),
             ],
-            path: "Sources/AppControlViewer",
-            resources: [.process("Resources")]
+            path: "Sources/AppControlViewer"
+            // Bewusst KEINE resources: Das Info.plist liegt unter Packaging/ und
+            // gehoert zum Xcode-App-Projekt, nicht ins SwiftPM-Ressourcenbuendel.
+            // SwiftPM lehnt ein Info.plist als Top-Level-Ressource ausdruecklich
+            // ab - es wuerde mit dem Bundle-eigenen kollidieren.
         ),
         .testTarget(
             name: "AppControlViewerTests",
