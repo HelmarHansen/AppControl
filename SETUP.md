@@ -197,23 +197,42 @@ dotnet test                    # Krypto, Input-Gates, Decoder, Tastenabbildung
 
 Das kompiliert und die Tests laufen durch.
 
-### Starten — hier ist die offene Stelle
+### Starten
 
 ```powershell
 dotnet run --project src/AppControl.Host
 ```
 
-→ `System.NotImplementedException: D3D11Helper.CreateDevice()`
+Das Tray-Icon erscheint, das Statusfenster zeigt „Bereit". Beim ersten Start
+erzeugt der Host seinen Langzeitschlüssel und legt ihn per DPAPI ab.
 
-Zwei Stellen fehlen, beide mit schrittweisem Leitfaden im Quelltext:
+**Beide Lücken von früher sind geschlossen** — Direct3D-Geräteerstellung und
+H.264-Encoder sind ausgeführt. Was bleibt, ist Komfort:
 
 | Stelle | Aufwand | Wirkung |
 |---|---|---|
-| `Capture/D3D11Helper.CreateDevice()` | ~1 h | Ohne sie startet die App nicht |
-| `Media/MediaFoundationH264Encoder` | ~1–2 Tage | Ohne ihn steht die Verbindung, aber es kommt kein Bild an |
+| `Capture/WindowThumbnailProvider` | ~4 h | App-Picker zeigt Platzhalter-Kacheln statt Live-Vorschau. Auswahl funktioniert. |
+| Cursorform im Viewer | ~2 h | Der Mauszeiger sieht im Viewer immer gleich aus. |
 
-Sobald beide stehen, ist das System vollständig benutzbar. Alles andere — Consent,
-Overlay, Gates, Krypto, Netzwerk, Tray, App-Picker — ist fertig.
+### Beim allerersten Lauf: worauf du achten solltest
+
+Der Encoder ist vollständig geschrieben, aber noch nie auf echter Hardware
+gelaufen — eine CI hat weder GPU noch Bildschirm zum Erfassen. Falls die
+Verbindung steht und das Bild trotzdem schwarz bleibt, sagt das Log, woran es
+liegt:
+
+```powershell
+dotnet run --project src/AppControl.Host 2>&1 | Select-String "Encoder|ProcessOutput|D3D"
+```
+
+Drei Zeilen sind dabei aussagekräftig:
+
+| Logzeile | Bedeutung |
+|---|---|
+| `Encoder initialisiert: … asynchron (Hardware)` | Der Normalfall. Hardware-Encoder gefunden. |
+| `… synchron (Software)` | Kein Hardware-Encoder. Läuft, kostet aber deutlich mehr CPU. |
+| `arbeitet ohne D3D-Device-Manager` | Die Bilder gehen über den Systemspeicher statt über die GPU — etwa dreifache CPU-Last bei 1080p60. |
+| `Encoder.ProcessOutput fehlgeschlagen (0x…)` | Der eigentliche Fehlerfall. HRESULT notieren, `docs/07-roadmap.md` §7.1 nennt die wahrscheinlichsten Ursachen. |
 
 ### Weitergabe an deinen Freund (später)
 
