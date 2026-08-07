@@ -41,17 +41,21 @@ let package = Package(
             // WebRTC.xcframework traegt Auto-Link-Direktiven, die auf macOS
             // unvollstaendig aufgehen: Der Linker meldet
             //   "Could not find or use auto-linked framework 'CoreAudioTypes'"
-            // und bricht das Auto-Linking danach ab. Als Folge bleiben
-            // Objective-C-Klassen aus dem Framework unaufgeloest, allen voran
-            // RTCMTLNSVideoView aus Video/VideoRenderView.swift.
+            // und bricht das Auto-Linking danach ab.
             //
             // Die Frameworks hier explizit zu nennen macht das Linken unabhaengig
-            // vom Auto-Linking. Metal und MetalKit braucht der Renderer,
-            // VideoToolbox den Hardware-Decoder, die Audio-Frameworks zieht
-            // WebRTC selbst nach - auch wenn AppControl kein Audio uebertraegt.
+            // vom Auto-Linking. Metal und CoreImage braucht
+            // Video/MetalVideoRenderer.swift, VideoToolbox den Hardware-Decoder,
+            // die Audio-Frameworks zieht WebRTC selbst nach - auch wenn
+            // AppControl kein Audio uebertraegt.
+            //
+            // Was das NICHT reparieren kann: eine Klasse, die im macOS-Slice des
+            // Frameworks gar nicht enthalten ist. Genau das war bei
+            // RTCMTLNSVideoView der Fall - deshalb rendert AppControl selbst.
             linkerSettings: [
                 .linkedFramework("Metal"),
                 .linkedFramework("MetalKit"),
+                .linkedFramework("CoreImage"),
                 .linkedFramework("CoreMedia"),
                 .linkedFramework("CoreVideo"),
                 .linkedFramework("CoreGraphics"),

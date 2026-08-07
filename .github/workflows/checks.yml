@@ -121,30 +121,24 @@ jobs:
           key: spm-${{ runner.os }}-${{ hashFiles('viewer-macos/Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
 
-      # ── OFFENER PUNKT: WebRTC-Linking auf macOS ────────────────────────────
+      # ── Warum hier kein RTCMTLNSVideoView mehr auftaucht ───────────────────
       #
-      # Dieser Schritt schlaegt derzeit zuverlaessig fehl. Der Swift-Code
-      # UEBERSETZT vollstaendig (116 Dateien, keine Fehler); es scheitert das
-      # Linken:
+      # Bis Commit 813fafb scheiterte dieser Schritt am Linken - nicht am
+      # Uebersetzen. Der Swift-Code ging vollstaendig durch, exakt ein Symbol
+      # blieb offen:
       #
-      #   ld: warning: Could not find or use auto-linked framework 'CoreAudioTypes'
       #   Undefined symbols: _OBJC_CLASS_$_RTCMTLNSVideoView
       #
-      # Bereits erfolglos versucht:
-      #   - explizite linkerSettings mit Metal, MetalKit, VideoToolbox u. a.
-      #   - Beschraenkung auf `swift test` statt `swift build` - vergeblich,
-      #     weil swift test das Executable ebenfalls linkt
+      # Jede andere WebRTC-Klasse loeste auf. Die Metal-Ansicht ist im
+      # macOS-Slice der xcframework-Distribution schlicht nicht enthalten.
+      # Explizite linkerSettings halfen deshalb nicht, und `swift test` statt
+      # `swift build` auch nicht - swift test linkt das Executable ebenfalls.
       #
-      # Die verbleibenden Wege sind beide echte Arbeit und keine Konfiguration:
-      #   a) Den Code in ein WebRTC-freies Bibliotheks-Target (Krypto,
-      #      Protokoll, Eingabekodierung) und ein App-Target aufteilen. Die CI
-      #      prueft dann das Bibliotheks-Target und die Tests; das App-Target
-      #      baut Xcode. Saubere Trennung, aber viele public-Annotationen.
-      #   b) RTCMTLNSVideoView zur Laufzeit ueber NSClassFromString aufloesen
-      #      und einen eigenen RTCVideoRenderer als Rueckfall schreiben.
+      # Video/MetalVideoRenderer.swift ersetzt die Klasse durch eine eigene
+      # RTCVideoRenderer-Implementierung auf CAMetalLayer und CIContext. Damit
+      # haengt der Build nur noch an Apple-Systemframeworks.
       #
-      # Der Schritt bleibt bewusst rot statt per continue-on-error versteckt zu
-      # werden: Ein Fehlschlag, den niemand mehr sieht, ist schlimmer als einer,
-      # der stoert. Siehe docs/07-roadmap.md.
+      # Kein continue-on-error: Ein Fehlschlag, den niemand mehr sieht, ist
+      # schlimmer als einer, der stoert.
       - name: Übersetzen und testen
-        run: cd viewer-macos && swift test
+        run: cd viewer-macos && swift build && swift test
