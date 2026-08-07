@@ -120,6 +120,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      SecureChannel.SealWithFixedNonce ist absichtlich internal: Es setzt Zaehler
+      und Salt von aussen und waere im Produktivcode ein Fussangel - eine
+      wiederverwendete Nonce bricht ChaCha20-Poly1305 vollstaendig.
+
+      Die Testvektoren lassen sich ohne diesen Zugang aber nicht bitgenau
+      nachrechnen, und genau dieser Vergleich ist der Zweck von
+      CryptoVectorTests. Also internal bleiben und dem Testprojekt oeffnen,
+      statt die Methode public zu machen.
+    -->
+    <InternalsVisibleTo Include="AppControl.Host.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

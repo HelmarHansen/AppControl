@@ -316,6 +316,30 @@ check("NaN wird vor der Koordinatenberechnung abgefangen",
       "Math.Clamp(NaN, 0, 1) gibt NaN zurück — beide Vergleiche sind bei NaN\n"
       "false. Ohne die Prüfung liefe NaN bis in SendInput.")
 
+# ── Testvektoren: eine Quelle, zwei Kopien ───────────────────────────────────
+#
+# Der Windows-Test bindet tools/crypto-vectors/vectors.json ueber einen
+# MSBuild-Link ein - das geht ueber Projektgrenzen hinweg. SwiftPM kann das
+# nicht: Ressourcen muessen im Target-Verzeichnis liegen, und ein Symlink dorthin
+# wird als Symlink ins Bundle kopiert, wo er ins Leere zeigt. Genau daran sind
+# die Viewer-Tests in CI-Lauf 9 gescheitert.
+#
+# Deshalb liegt unter viewer-macos/ eine echte Kopie. Zwei Kopien heisst: Sie
+# koennen auseinanderlaufen. Diese Pruefung ist der Grund, warum sie es nicht
+# unbemerkt tun.
+vectors_source = ROOT / "tools/crypto-vectors/vectors.json"
+vectors_viewer = ROOT / "viewer-macos/Tests/AppControlViewerTests/vectors.json"
+check("Testvektoren des Viewers stimmen mit der Quelle ueberein",
+      vectors_viewer.exists() and
+      vectors_viewer.read_bytes() == vectors_source.read_bytes(),
+      "Abgleichen mit:\n"
+      "  cp tools/crypto-vectors/vectors.json viewer-macos/Tests/AppControlViewerTests/")
+
+check("Die Viewer-Kopie ist eine echte Datei, kein Symlink",
+      vectors_viewer.exists() and not vectors_viewer.is_symlink(),
+      "SwiftPM kopiert Symlinks als Symlinks ins Ressourcenbuendel -\n"
+      "dort zeigen sie ins Leere und der Test bricht mit fatalError ab.")
+
 # ─────────────────────────────────────────────────────────────────────────────
 print()
 if failures:

@@ -11,7 +11,7 @@ dann Viewer.
 |---|---|
 | `signaling/` | **Vollständig lauffähig.** `npm test` → 27 Tests grün. |
 | `tools/crypto-vectors/` | **Vollständig lauffähig.** `node verify.mjs` → 10 Prüfungen grün. |
-| `tools/consistency/` | **Vollständig lauffähig.** `python3 check.py` → 52 Prüfungen grün. |
+| `tools/consistency/` | **Vollständig lauffähig.** `python3 check.py` → 54 Prüfungen grün. |
 | `host-windows/` | **Vollständig ausgeführt, auf Hardware unerprobt.** Zustandsmaschine, Gates, Krypto, UI, Protokoll, D3D-Geräteerstellung und der Media-Foundation-Encoder sind fertig. Offen ist nur `WindowThumbnailProvider` (Live-Vorschau im App-Picker). |
 | `viewer-macos/` | **Vollständig ausgeführt, auf Hardware unerprobt.** Offen ist nur die Cursorform-Übernahme. Die Abhängigkeit `stasel/WebRTC` wird beim ersten Build geladen (~250 MB). |
 

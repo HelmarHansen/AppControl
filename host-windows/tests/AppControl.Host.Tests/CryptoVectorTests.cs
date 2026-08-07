@@ -26,11 +26,14 @@ public sealed class CryptoVectorTests
 
     private static JsonDocument LoadVectors()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "vectors.json");
-        Assert.True(File.Exists(path),
+        // Voll qualifiziert: Das Testprojekt hat UseWPF, und System.Windows.Shapes
+        // bringt ein eigenes Path mit. Drei qualifizierte Namen sind kuerzer als
+        // die Erklaerung, warum sonst ein Alias dastuende.
+        var path = System.IO.Path.Combine(AppContext.BaseDirectory, "vectors.json");
+        Assert.True(System.IO.File.Exists(path),
             $"vectors.json fehlt unter {path}. " +
             "Erzeugen mit: node tools/crypto-vectors/generate.mjs > tools/crypto-vectors/vectors.json");
-        return JsonDocument.Parse(File.ReadAllText(path));
+        return JsonDocument.Parse(System.IO.File.ReadAllText(path));
     }
 
     private static byte[] Hex(string key, params string[] path)
