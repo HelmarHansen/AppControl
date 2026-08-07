@@ -2,25 +2,45 @@
 
 ## 7.1 Was zum Laufen fehlt
 
-Vier markierte Stellen trennen dieses Gerüst von einer funktionierenden
-Anwendung. Jede trägt einen schrittweisen Leitfaden im Quelltext.
+Die beiden Stellen, die das Gerüst von einer funktionierenden Anwendung trennten
+— Direct3D-Geräteerstellung und H.264-Encoder — sind ausgeführt. Was bleibt, ist
+Politur.
 
 | # | Stelle | Aufwand | Blockiert |
 |---|---|---|---|
-| 1 | `Capture/D3D11Helper.CreateDevice()` | ~1 h | **Alles.** Ohne D3D-Device startet der Host nicht. |
-| 2 | `Media/MediaFoundationH264Encoder` | ~1–2 Tage | Den Videostrom. Ohne ihn steht die Verbindung, aber es kommt kein Bild an. |
-| 3 | `Capture/WindowThumbnailProvider` | ~4 h | Nur die Live-Vorschau im App-Picker. Auswahl funktioniert auch mit Platzhalter-Kacheln. |
-| 4 | Cursorform im Viewer | ~2 h | Nichts. Reines Komfort-Feature. |
+| 1 | `Capture/WindowThumbnailProvider` | ~4 h | Nur die Live-Vorschau im App-Picker. Die Auswahl funktioniert auch mit Platzhalter-Kacheln. |
+| 2 | Cursorform im Viewer | ~2 h | Nichts. Reines Komfort-Feature. |
 
-**Empfohlene Reihenfolge:** 1 → 2 → 3 → 4. Nach Schritt 2 ist das System
-vollständig benutzbar; 3 und 4 sind Politur.
+### Was stattdessen aussteht: die erste Inbetriebnahme
 
-Zu Schritt 2, weil er der größte ist: Der Leitfaden in
-`MediaFoundationH264Encoder.cs` ist in sieben Schritten ausgeführt. Der
-kritischste ist Schritt 2 (D3D-Device-Manager an den MFT übergeben) — ohne ihn
-läuft alles über den Systemspeicher, und die gesamte Zero-Copy-Architektur aus
-`CaptureEngine` ist wirkungslos. Der Unterschied ist etwa Faktor 3 in der
-CPU-Last bei 1080p60.
+Der Encoder ist vollständig geschrieben, aber nie auf echter Hardware gelaufen —
+eine CI hat weder GPU noch Bildschirm. Das ist keine Lücke im Code, sondern eine
+im Wissen darüber, ob er stimmt. Die wahrscheinlichsten Fundstellen beim ersten
+Lauf, nach Erfahrung mit Media Foundation geordnet:
+
+1. **Reihenfolge der Medientypen.** Der Video-Processor will erst den Eingabe-,
+   dann den Ausgabetyp; der Encoder genau andersherum. Verwechselt man es,
+   antwortet Media Foundation mit `MF_E_TRANSFORM_TYPE_NOT_SET` statt mit etwas
+   Verständlichem.
+2. **Der D3D-Device-Manager.** Ohne ihn läuft alles über den Systemspeicher.
+   Es *funktioniert* dann — nur mit etwa dreifacher CPU-Last bei 1080p60. Das
+   Log sagt es (`arbeitet ohne D3D-Device-Manager`), der Bildschirm nicht.
+3. **Herstellerabhängige Codec-Regler.** Nicht jeder Treiber kennt jeden Wert.
+   Deshalb wird jeder einzeln und fehlertolerant gesetzt: Ein Encoder ohne
+   `QualityVsSpeed` ist immer noch ein Encoder.
+
+### Offen auf der Viewer-Seite: Target-Aufteilung
+
+Der macOS-Viewer ist ein einziges SwiftPM-Target. Ihn in ein WebRTC-freies
+Bibliotheks-Target (Krypto, Protokoll, Eingabekodierung) und ein App-Target zu
+teilen, wäre die sauberere Struktur: Die CI prüfte dann die testbare Logik, ohne
+ein 250-MB-Framework zu linken.
+
+Bewusst zurückgestellt. Der Anlass war ein Linkfehler — `RTCMTLNSVideoView` fehlt
+im macOS-Slice des WebRTC-Frameworks —, und der ist inzwischen anders gelöst:
+`Video/MetalVideoRenderer.swift` rendert selbst über `CAMetalLayer`. Die
+Aufteilung nachzuholen hieße, rund 150 Deklarationen auf `public` zu heben; das
+ist viel mechanische Änderung an Code, der ohne sie genauso funktioniert.
 
 ---
 

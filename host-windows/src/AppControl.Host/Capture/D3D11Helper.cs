@@ -230,6 +230,22 @@ public static class D3D11Helper
 
     private static readonly Guid IID_ID3D11Texture2D = new("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
 
+    /// <summary>
+    /// Holt das native ID3D11Device aus der WinRT-Huelle.
+    ///
+    /// Der Encoder braucht es fuer zwei Dinge: den DXGI-Device-Manager, ueber den
+    /// Media Foundation auf derselben GPU arbeitet, und das Anlegen von
+    /// NV12-Texturen. Der Aufrufer MUSS den Zeiger per Marshal.Release freigeben.
+    /// </summary>
+    public static nint GetNativeDevice(IDirect3DDevice device)
+    {
+        var access = device.As<IDirect3DDxgiInterfaceAccess>();
+        var iid = IID_ID3D11Device;
+        return access.GetInterface(ref iid);
+    }
+
+    private static readonly Guid IID_ID3D11Device = new("db6f6ddb-ac77-4e88-8253-819df9bbf140");
+
     [ComImport]
     [Guid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

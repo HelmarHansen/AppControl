@@ -88,13 +88,16 @@
     <!--
       KEINE Wrapper-Bibliothek fuer Direct3D und Media Foundation.
 
-      Capture/D3D11Helper.cs und Encoding/MediaFoundationH264Encoder.cs sprechen
-      direkt per P/Invoke und COM-Interop mit den nativen APIs. Die Alternative
-      waere Vortice.* gewesen; dagegen sprach, dass es hier um wenige Dutzend
-      Aufrufe geht, deren native Signaturen stabil und gut dokumentiert sind.
-      Eine Abhaengigkeit von ~30 MB fuer drei Funktionen lohnt sich nicht - und
-      bei Interop ist es ohnehin hilfreich, genau zu sehen, was ueber die Grenze
-      geht.
+      Capture/D3D11Helper.cs und Media/MediaFoundationInterop.cs sprechen direkt
+      per P/Invoke und COM-Interop mit den nativen APIs. Die Alternative waere
+      Vortice.* gewesen; dagegen sprach, dass es um eine ueberschaubare Zahl von
+      Aufrufen mit stabilen, dokumentierten Signaturen geht. Eine Abhaengigkeit
+      von ~30 MB dafuer lohnt sich nicht - und bei Interop ist es ohnehin
+      hilfreich, genau zu sehen, was ueber die Grenze geht.
+
+      Der Preis dafuer steht in MediaFoundationInterop.cs: COM loest Methoden
+      ueber ihre Vtable-Position auf, also muessen auch Methoden dastehen, die
+      nie aufgerufen werden. Sie sind dort als Platzhalter markiert.
     -->
 
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.18" />
