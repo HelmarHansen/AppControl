@@ -117,6 +117,26 @@
     -->
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+
+    <!--
+      Dritte Huelle derselben Kette: System.Net.Http 4.3.4 zieht
+      System.Private.Uri 4.3.0 nach, und das hat drei eigene Meldungen
+      (GHSA-5f2m-466j-3848, GHSA-xhfc-gr8f-ffwc, GHSA-x5qj-9vmx-7g6g).
+      4.3.2 ist die gepatchte Fassung.
+
+      Dass hier drei Pakete einzeln festgenagelt werden muessen, ist kein
+      Zufall: Es sind alles Kompatibilitaetshuellen aus der .NET-Core-1.x-Zeit,
+      die auf .NET 8 nur noch auf die Laufzeit verweisen. Ausnutzbar ist dort
+      nichts - aber das Audit sieht Paketversionen, nicht Aufrufwege, und das
+      ist die richtige Voreinstellung: Lieber drei erklaerte Zeilen als eine
+      abgeschaltete Pruefung.
+
+      Nebenwirkung, die man kennen sollte: Mit NuGetAuditLevel=low und
+      TreatWarningsAsErrors kann ein Build ohne Codeaenderung rot werden, wenn
+      eine neue Meldung veroeffentlicht wird. Genau so ist dieser hier
+      aufgetaucht. Das ist gewollt.
+    -->
+    <PackageReference Include="System.Private.Uri" Version="4.3.2" />
   </ItemGroup>
 
   <ItemGroup>
