@@ -101,9 +101,33 @@ public static class Handshake
             sessionKey, peerStaticPublic.ToArray(), peerName, emoji, indices);
     }
 
+    /// <summary>
+    /// Eine X25519-Operation, deren Ergebnis als Rohbytes herauskommt.
+    ///
+    /// DIE EXPORT-RICHTLINIE IST HIER PFLICHT, NICHT KOSMETIK: NSec verweigert
+    /// den Export eines SharedSecret standardmaessig - mit
+    /// "The key cannot be exported". Das ist eine gute Voreinstellung, denn der
+    /// uebliche Weg ist, direkt aus dem SharedSecret abzuleiten, ohne dass die
+    /// Rohbytes je im verwalteten Speicher auftauchen.
+    ///
+    /// Unser Protokoll kann diesen Weg nicht gehen: Der Sitzungsschluessel
+    /// entsteht aus DREI verketteten DH-Ergebnissen (siehe ComputeSession), und
+    /// verketten laesst sich nur, was man in der Hand hat. Deshalb wird der
+    /// Export ausdruecklich erlaubt - und deshalb loescht ComputeSession die
+    /// Puffer anschliessend mit ZeroMemory.
+    ///
+    /// Ohne diese Zeile wirft jeder Handshake eine InvalidOperationException.
+    /// Genau dafuer gibt es die Testvektoren: Der Fehler lag hier, bis
+    /// CryptoVectorTests zum ersten Mal laufen konnte.
+    /// </summary>
     private static byte[] Agree(Key ownPrivate, PublicKey peerPublic)
     {
-        var shared = X25519.Agree(ownPrivate, peerPublic)
+        var creationParameters = new SharedSecretCreationParameters
+        {
+            ExportPolicy = KeyExportPolicies.AllowPlaintextExport,
+        };
+
+        using var shared = X25519.Agree(ownPrivate, peerPublic, creationParameters)
             ?? throw new CryptographicException(
                 "X25519-Schluesselaustausch fehlgeschlagen - ungueltiger oeffentlicher Schluessel " +
                 "(Punkt kleiner Ordnung?). Die Verbindung wird abgebrochen.");
