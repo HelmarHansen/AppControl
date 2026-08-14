@@ -261,4 +261,128 @@ internal static partial class NativeMethods
 
     public static bool IsCloaked(nint hwnd)
         => DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, out var cloaked, sizeof(int)) == 0 && cloaked != 0;
+
+    // ── Mauszeiger ───────────────────────────────────────────────────────────
+
+    public const int CURSOR_SHOWING = 0x00000001;
+
+    // Ressourcen-IDs der Systemzeiger aus WinUser.h.
+    public const int IDC_ARROW = 32512;
+    public const int IDC_IBEAM = 32513;
+    public const int IDC_WAIT = 32514;
+    public const int IDC_SIZEWE = 32644;
+    public const int IDC_SIZENS = 32645;
+    public const int IDC_HAND = 32649;
+    public const int IDC_APPSTARTING = 32650;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CURSORINFO
+    {
+        public uint cbSize;
+        public uint flags;
+        public nint hCursor;
+        public POINT ptScreenPos;
+    }
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetCursorInfo(ref CURSORINFO pci);
+
+    /// <summary>
+    /// Mit hInstance = 0 und einer Ressourcen-ID liefert die Funktion den
+    /// gemeinsam genutzten Systemzeiger. Genau deshalb laesst sich das Ergebnis
+    /// direkt mit CURSORINFO.hCursor vergleichen - es ist dasselbe Handle.
+    /// </summary>
+    [LibraryImport("user32.dll", SetLastError = true)]
+    public static partial nint LoadCursorW(nint hInstance, nint lpCursorName);
+
+    // ── GDI: Vorschaubilder fuer den App-Picker ──────────────────────────────
+    //
+    // NUR FUER DIE VORSCHAU IM PICKER, nicht fuer den Stream. Der laeuft ueber
+    // Windows.Graphics.Capture und bleibt auf der GPU (siehe CaptureEngine).
+    // Die Begruendung fuer die zwei verschiedenen Wege steht in
+    // Capture/WindowThumbnailProvider.cs.
+
+    /// <summary>
+    /// Laesst PrintWindow den vollstaendigen, per DWM zusammengesetzten Inhalt
+    /// zeichnen statt nur das, was die Anwendung selbst per WM_PRINT liefert.
+    /// Ohne dieses Flag bleiben Fenster mit Hardwarebeschleunigung schwarz.
+    /// </summary>
+    public const uint PW_RENDERFULLCONTENT = 0x00000002;
+
+    public const uint DIB_RGB_COLORS = 0;
+    public const uint BI_RGB = 0;
+    public const uint SRCCOPY = 0x00CC0020;
+
+    /// <summary>Halbton-Skalierung: langsamer als der Standard, aber ohne Treppenstufen.</summary>
+    public const int HALFTONE = 4;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPINFOHEADER
+    {
+        public uint biSize;
+        public int biWidth;
+        /// <summary>Negativ = von oben nach unten. Genau die Reihenfolge, die WriteableBitmap erwartet.</summary>
+        public int biHeight;
+        public ushort biPlanes;
+        public ushort biBitCount;
+        public uint biCompression;
+        public uint biSizeImage;
+        public int biXPelsPerMeter;
+        public int biYPelsPerMeter;
+        public uint biClrUsed;
+        public uint biClrImportant;
+    }
+
+    /// <summary>
+    /// BITMAPINFO ist im SDK ein Header plus eine Farbtabelle variabler Laenge.
+    /// Bei BI_RGB mit 32 Bit liest GDI die Tabelle nicht - die drei Felder
+    /// stehen trotzdem da, damit die Struktur nicht kleiner ist als das, was
+    /// die API im ungueltigen Fall anfassen koennte.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPINFO
+    {
+        public BITMAPINFOHEADER bmiHeader;
+        public uint bmiColorReserved0;
+        public uint bmiColorReserved1;
+        public uint bmiColorReserved2;
+    }
+
+    [LibraryImport("user32.dll")]
+    public static partial nint GetDC(nint hWnd);
+
+    [LibraryImport("user32.dll")]
+    public static partial int ReleaseDC(nint hWnd, nint hDC);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool PrintWindow(nint hwnd, nint hdcBlt, uint nFlags);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial nint CreateCompatibleDC(nint hdc);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DeleteDC(nint hdc);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial nint SelectObject(nint hdc, nint h);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DeleteObject(nint ho);
+
+    [LibraryImport("gdi32.dll", SetLastError = true)]
+    public static partial nint CreateDIBSection(
+        nint hdc, ref BITMAPINFO pbmi, uint usage, out nint ppvBits, nint hSection, uint offset);
+
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool StretchBlt(
+        nint hdcDest, int xDest, int yDest, int wDest, int hDest,
+        nint hdcSrc, int xSrc, int ySrc, int wSrc, int hSrc, uint rop);
+
+    [LibraryImport("gdi32.dll")]
+    public static partial int SetStretchBltMode(nint hdc, int mode);
 }

@@ -166,7 +166,7 @@ public partial class App : Application
     {
         if (_state.Current.State is not (SessionState.Sharing or SessionState.Paused)) return;
 
-        var picker = new AppPickerWindow();
+        var picker = new AppPickerWindow(_loggerFactory);
         if (picker.ShowDialog() == true && picker.SelectedScope is not null)
         {
             _state.ChangeScope(picker.SelectedScope);

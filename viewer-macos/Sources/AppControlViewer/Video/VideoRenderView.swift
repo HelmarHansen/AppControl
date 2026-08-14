@@ -18,6 +18,13 @@ import WebRTC
 struct VideoRenderView: NSViewRepresentable {
     let track: RTCVideoTrack?
 
+    /// Zeigerform, die der Host meldet. Einer der sechs Werte aus
+    /// protocol/schemas/control-messages.schema.json.
+    let cursorShape: String
+
+    /// Ob der Host überhaupt einen Zeiger anzeigt.
+    let cursorVisible: Bool
+
     /// Meldet den tatsächlichen Bereich, in dem das Video dargestellt wird —
     /// in Fensterkoordinaten. `InputCapture` braucht das, um Mauspositionen zu
     /// normalisieren.
@@ -31,6 +38,7 @@ struct VideoRenderView: NSViewRepresentable {
 
     func updateNSView(_ view: ContainerView, context: Context) {
         view.attach(track: track)
+        view.applyRemoteCursor(shape: cursorShape, visible: cursorVisible)
     }
 
     static func dismantleNSView(_ view: ContainerView, coordinator: ()) {
@@ -88,6 +96,68 @@ struct VideoRenderView: NSViewRepresentable {
             super.layout()
             reportVideoFrame()
         }
+
+        // MARK: Zeigerform
+
+        private var remoteCursor: NSCursor = .arrow
+
+        /// Übernimmt die vom Host gemeldete Zeigerform.
+        ///
+        /// **Warum überhaupt zwei Zeiger?** Der Zeiger des Hosts ist bereits Teil
+        /// des Videobildes — der Host aktiviert `IsCursorCaptureEnabled`. Der
+        /// Viewer hat zusätzlich seinen eigenen, lokalen Zeiger, und der reagiert
+        /// ohne Netzverzögerung. Beide zu zeigen ist gewollt: Der lokale sagt
+        /// „hier bin ich jetzt", der entfernte „hier ist der Host angekommen".
+        /// Bei guter Verbindung liegen sie übereinander, bei schlechter sieht man
+        /// die Latenz — was ehrlicher ist, als sie zu verstecken.
+        ///
+        /// Was nicht sein soll: dass die beiden UNTERSCHIEDLICH aussehen. Ein
+        /// Pfeil über einem Textfeld, in dem das Bild einen Textcursor zeigt,
+        /// wirkt wie ein Fehler. Genau das behebt diese Methode.
+        func applyRemoteCursor(shape: String, visible: Bool) {
+            let resolved = visible ? Self.cursor(for: shape) : Self.invisibleCursor
+            guard resolved !== remoteCursor else { return }
+
+            remoteCursor = resolved
+            window?.invalidateCursorRects(for: self)
+        }
+
+        override func resetCursorRects() {
+            addCursorRect(bounds, cursor: remoteCursor)
+        }
+
+        private static func cursor(for shape: String) -> NSCursor {
+            switch shape {
+            case "ibeam":     return .iBeam
+            case "hand":      return .pointingHand
+            case "resize-ns": return .resizeUpDown
+            case "resize-ew": return .resizeLeftRight
+
+            // macOS hat keinen öffentlichen „beschäftigt"-Zeiger: Der Regenbogen
+            // gehört dem System und lässt sich nicht anfordern. Ein Pfeil ist die
+            // ehrlichere Wahl als ein selbstgemalter Ersatz, der nach nichts
+            // Bekanntem aussieht.
+            case "wait":      return .arrow
+
+            default:          return .arrow
+            }
+        }
+
+        /// Ein vollständig transparenter Zeiger.
+        ///
+        /// `NSCursor.hide()` wäre der naheliegende Weg und wäre falsch: Es
+        /// versteckt den Zeiger ANWENDUNGSWEIT und zählt Aufrufe mit — ein
+        /// verpasstes `unhide()`, und der Nutzer sitzt ohne Mauszeiger da, auch
+        /// in den Menüs. Ein leeres Bild als Zeigerform wirkt nur dort, wo es
+        /// gesetzt ist, und verschwindet mit der Ansicht.
+        private static let invisibleCursor: NSCursor = {
+            let image = NSImage(size: NSSize(width: 1, height: 1))
+            image.lockFocus()
+            NSColor.clear.set()
+            NSRect(x: 0, y: 0, width: 1, height: 1).fill()
+            image.unlockFocus()
+            return NSCursor(image: image, hotSpot: .zero)
+        }()
 
         /// Berechnet das tatsächliche Video-Rechteck innerhalb der View
         /// (`aspect fit`) und meldet es in **Fensterkoordinaten**.

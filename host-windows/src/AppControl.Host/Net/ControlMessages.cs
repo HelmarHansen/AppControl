@@ -89,6 +89,25 @@ public static class ControlMessages
         [JsonPropertyName("packetsLost")] public long PacketsLost { get; init; }
     }
 
+    /// <summary>
+    /// Host → Viewer. Welche Zeigerform gerade unter der Maus des Hosts liegt.
+    ///
+    /// Der Zeiger des Hosts steckt bereits im Videobild (IsCursorCaptureEnabled).
+    /// Diese Nachricht ist fuer den LOKALEN Zeiger des Viewers da: Ohne sie
+    /// schwebt ueber einem Textfeld ein Pfeil, waehrend das Bild darunter einen
+    /// Textcursor zeigt. Mit ihr stimmen beide ueberein.
+    ///
+    /// Die erlaubten Werte stehen in protocol/schemas/control-messages.schema.json
+    /// und sind dort abschliessend - nicht erweitern, ohne Schema, docs/04 und
+    /// die Swift-Seite mitzuziehen.
+    /// </summary>
+    public sealed record Cursor
+    {
+        [JsonPropertyName("t")]       public string Type => "cursor";
+        [JsonPropertyName("shape")]   public string Shape { get; init; } = "arrow";
+        [JsonPropertyName("visible")] public bool Visible { get; init; } = true;
+    }
+
     public sealed record Bye
     {
         [JsonPropertyName("t")]      public string Type => "bye";

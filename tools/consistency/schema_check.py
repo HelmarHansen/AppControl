@@ -83,12 +83,22 @@ expect("stats", control, {
 expect("viewport (Viewer → Host)", control,
        {"t": "viewport", "width": 1600, "height": 900, "scale": 2.0}, True)
 
+expect("cursor (arrow)", control, {"t": "cursor", "shape": "arrow", "visible": True}, True)
+expect("cursor (versteckt)", control, {"t": "cursor", "shape": "arrow", "visible": False}, True)
+expect("cursor (ibeam)", control, {"t": "cursor", "shape": "ibeam", "visible": True}, True)
+
 expect("request-control", control, {"t": "request-control"}, True)
 expect("ping",  control, {"t": "ping",  "id": 42, "tsMicros": 1712345678901234}, True)
 expect("pong",  control, {"t": "pong",  "id": 42, "tsMicros": 1712345678901234}, True)
 expect("bye",   control, {"t": "bye", "reason": "EmergencyHotkey"}, True)
 
 print("\n\033[1mControl-Nachrichten — was abgelehnt werden muss\033[0m\n")
+
+# Eine unbekannte Zeigerform muss auffallen: Der Viewer faellt sonst still auf
+# den Pfeil zurueck, und niemand merkt, dass der Host etwas anderes meinte.
+expect("cursor mit unbekannter Form", control,
+       {"t": "cursor", "shape": "crosshair", "visible": True}, False)
+expect("cursor ohne visible", control, {"t": "cursor", "shape": "arrow"}, False)
 
 expect("share-state mit unbekanntem Zustand", control, {
     "t": "share-state", "state": "recording",

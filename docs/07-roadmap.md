@@ -2,14 +2,31 @@
 
 ## 7.1 Was zum Laufen fehlt
 
-Die beiden Stellen, die das Gerüst von einer funktionierenden Anwendung trennten
-— Direct3D-Geräteerstellung und H.264-Encoder — sind ausgeführt. Was bleibt, ist
-Politur.
+Nichts mehr an Code. Die vier ursprünglich markierten Stellen sind alle
+ausgeführt:
 
-| # | Stelle | Aufwand | Blockiert |
-|---|---|---|---|
-| 1 | `Capture/WindowThumbnailProvider` | ~4 h | Nur die Live-Vorschau im App-Picker. Die Auswahl funktioniert auch mit Platzhalter-Kacheln. |
-| 2 | Cursorform im Viewer | ~2 h | Nichts. Reines Komfort-Feature. |
+| Stelle | Stand |
+|---|---|
+| `Capture/D3D11Helper.CreateDevice()` | ✅ P/Invoke, Hardware → WARP-Rückfall |
+| `Media/MediaFoundationH264Encoder` | ✅ Hardware (asynchroner MFT) und Software |
+| `Capture/WindowThumbnailProvider` | ✅ Live-Vorschau über PrintWindow, Aufnahme im Hintergrund |
+| Cursorform im Viewer | ✅ `CursorMonitor` auf dem Host, `NSCursor`-Rects im Viewer |
+
+Zwei Entscheidungen dabei sind erklärungsbedürftig und stehen jeweils im Code:
+
+**Die Vorschau nimmt nicht WGC.** Naheliegend wäre gewesen, für die Kacheln
+denselben Weg zu nehmen wie für den Stream. Das wäre falsch: WGC lässt Windows
+einen gelben Rahmen um jedes erfasste Fenster zeichnen. Im Picker wären das
+zwanzig gelb umrandete Fenster gleichzeitig — bevor überhaupt jemand zugestimmt
+hat. Das sähe aus wie ein Fehler und würde den Rahmen als Signal entwerten: Wer
+ihn ständig sieht, hört auf, ihn zu lesen. Die Vorschau nimmt deshalb
+`PrintWindow`, bleibt rein lokal und erzeugt keine Sitzung.
+
+**Der Viewer zeigt zwei Zeiger.** Der Zeiger des Hosts ist Teil des Videobildes,
+der lokale reagiert ohne Netzverzögerung. Beide zu zeigen ist gewollt — bei guter
+Verbindung liegen sie übereinander, bei schlechter sieht man die Latenz. Was
+nicht sein soll, ist dass sie *unterschiedlich aussehen*; genau das behebt die
+`cursor`-Nachricht.
 
 ### Was stattdessen aussteht: die erste Inbetriebnahme
 

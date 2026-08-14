@@ -316,6 +316,38 @@ check("NaN wird vor der Koordinatenberechnung abgefangen",
       "Math.Clamp(NaN, 0, 1) gibt NaN zurück — beide Vergleiche sind bei NaN\n"
       "false. Ohne die Prüfung liefe NaN bis in SendInput.")
 
+# ── Zeigerformen: Schema, Host und Viewer muessen dieselben sechs kennen ─────
+#
+# Der Vorrat steht an drei Stellen: im JSON-Schema (verbindlich), in
+# CursorMonitor.MapShape (was der Host senden kann) und in
+# VideoRenderView.cursor(for:) (was der Viewer versteht). Faellt eine Form in
+# einer davon weg, zeigt der Viewer stillschweigend einen Pfeil - ein Fehler,
+# den niemand meldet, weil nichts kaputtgeht.
+cursor_shapes = set(
+    json.loads((ROOT / "protocol/schemas/control-messages.schema.json").read_text())
+    ["$defs"]["cursor"]["properties"]["shape"]["enum"])
+
+host_cursor = read_code(HOST / "Capture/CursorMonitor.cs")
+viewer_cursor = read_code(VIEWER / "Video/VideoRenderView.swift")
+
+for shape in sorted(cursor_shapes):
+    if shape == "arrow":
+        # Der Rueckfallwert. Er steht in beiden Implementierungen als default da,
+        # nicht als eigener Zweig - deshalb hier nur die Existenz pruefen.
+        check("Zeigerform 'arrow' ist in beiden Implementierungen der Rueckfall",
+              '"arrow"' in host_cursor and ".arrow" in viewer_cursor)
+        continue
+
+    check(f"Zeigerform '{shape}' kennen Host und Viewer",
+          f'"{shape}"' in host_cursor and f'"{shape}"' in viewer_cursor,
+          "Der Wert steht im Schema, wird aber von mindestens einer Seite\n"
+          "nicht behandelt - der Viewer zeigt dann stumm einen Pfeil.")
+
+check("Der Viewer versteckt den Zeiger ohne NSCursor.hide()",
+      "invisibleCursor" in viewer_cursor and "NSCursor.hide()" not in viewer_cursor,
+      "NSCursor.hide() wirkt anwendungsweit und zaehlt Aufrufe mit. Ein\n"
+      "verpasstes unhide() laesst den Nutzer ohne Mauszeiger zurueck.")
+
 # ── Testvektoren: eine Quelle, zwei Kopien ───────────────────────────────────
 #
 # Der Windows-Test bindet tools/crypto-vectors/vectors.json ueber einen

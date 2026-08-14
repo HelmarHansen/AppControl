@@ -206,13 +206,9 @@ dotnet run --project src/AppControl.Host
 Das Tray-Icon erscheint, das Statusfenster zeigt „Bereit". Beim ersten Start
 erzeugt der Host seinen Langzeitschlüssel und legt ihn per DPAPI ab.
 
-**Beide Lücken von früher sind geschlossen** — Direct3D-Geräteerstellung und
-H.264-Encoder sind ausgeführt. Was bleibt, ist Komfort:
-
-| Stelle | Aufwand | Wirkung |
-|---|---|---|
-| `Capture/WindowThumbnailProvider` | ~4 h | App-Picker zeigt Platzhalter-Kacheln statt Live-Vorschau. Auswahl funktioniert. |
-| Cursorform im Viewer | ~2 h | Der Mauszeiger sieht im Viewer immer gleich aus. |
+**Alle markierten Lücken sind geschlossen** — Direct3D-Geräteerstellung,
+H.264-Encoder, Live-Vorschau im App-Picker und Zeigerform-Übernahme sind
+ausgeführt. Am Code fehlt nichts mehr.
 
 ### Beim allerersten Lauf: worauf du achten solltest
 

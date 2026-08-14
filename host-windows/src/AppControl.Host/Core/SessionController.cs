@@ -39,6 +39,7 @@ public sealed class SessionController : IAsyncDisposable
     private readonly InputDispatcher _dispatcher;
     private readonly CaptureEngine _capture;
     private readonly IVideoEncoder _encoder;
+    private readonly CursorMonitor _cursor;
 
     private PairingTicket? _ticket;
     private SecureChannel? _handshakeChannel;
@@ -67,6 +68,8 @@ public sealed class SessionController : IAsyncDisposable
         _encoder = encoder;
         _loggerFactory = loggerFactory;
         _log = loggerFactory.CreateLogger<SessionController>();
+
+        _cursor = new CursorMonitor(loggerFactory.CreateLogger<CursorMonitor>());
 
         _signaling = new SignalingClient(loggerFactory.CreateLogger<SignalingClient>());
         _peer = new PeerConnectionManager(loggerFactory.CreateLogger<PeerConnectionManager>());
@@ -125,6 +128,11 @@ public sealed class SessionController : IAsyncDisposable
         };
 
         _encoder.FrameEncoded += frame => _peer.SendVideo(frame, _encoder.CurrentSettings.FrameRate);
+
+        // Zeigerform nachziehen. Laeuft nur waehrend der Freigabe und meldet nur
+        // Aenderungen - siehe CursorMonitor.
+        _cursor.CursorChanged += (shape, visible) =>
+            _peer.SendControl(new ControlMessages.Cursor { Shape = shape, Visible = visible });
 
         // Zustandsaenderungen sofort an den Viewer melden. Das ist der Mechanismus,
         // durch den der Viewer eine Pause von einem Netzproblem unterscheiden kann.
@@ -342,6 +350,8 @@ public sealed class SessionController : IAsyncDisposable
             return;
         }
 
+        _cursor.Start();
+
         var offer = await _peer.CreateOfferAsync(_iceServers);
         SendSessionMessage(new { t = "sdp", kind = "offer", sdp = offer.sdp });
 
@@ -380,6 +390,7 @@ public sealed class SessionController : IAsyncDisposable
     {
         _state.Pause();
         _capture.Stop();
+        _cursor.Stop();                    // pausiert heisst: gar nichts mehr melden
         _dispatcher.ReleaseEverything();   // gehaltene Tasten sofort freigeben
     }
 
@@ -389,6 +400,7 @@ public sealed class SessionController : IAsyncDisposable
         if (scope is null) return;
         _state.Resume();
         _capture.Start(scope);
+        _cursor.Start();
     }
 
     public void SetControlGranted(bool granted)
@@ -497,6 +509,7 @@ public sealed class SessionController : IAsyncDisposable
 
         // 3. + 4. Keine neuen Frames, keine alten im Puffer.
         _capture.Stop();
+        _cursor.Stop();
 
         // 5. + 6. Verbindung abbauen - vorher noch ein bye, damit der Viewer
         //         weiss, dass es Absicht war und kein Netzfehler.
@@ -527,6 +540,7 @@ public sealed class SessionController : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _injector.Dispose();
+        _cursor.Dispose();
         _capture.Dispose();
         _encoder.Dispose();
         await _peer.DisposeAsync();

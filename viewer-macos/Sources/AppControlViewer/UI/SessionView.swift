@@ -17,7 +17,11 @@ struct SessionView: View {
             statusBar
 
             ZStack {
-                VideoRenderView(track: coordinator.videoTrack) { frame in
+                VideoRenderView(
+                    track: coordinator.videoTrack,
+                    cursorShape: coordinator.cursorShape,
+                    cursorVisible: coordinator.cursorVisible
+                ) { frame in
                     coordinator.inputCapture.videoFrame = frame
                 }
                 .background(Color.black)
