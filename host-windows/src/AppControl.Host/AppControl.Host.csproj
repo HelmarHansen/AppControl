@@ -69,13 +69,37 @@
     <!--
       WebRTC: rein verwaltet, kein natives Build noetig. Siehe docs/02-tech-stack.md §2.5
 
-      MINDESTVERSION 10.0.9 IST EINE SICHERHEITSANFORDERUNG, KEINE KOSMETIK:
-      Aeltere Versionen sind fuer GHSA-28gm-jrmw-xx93 anfaellig - ein manipuliertes
-      UDP-Paket auf dem RTP/ICE-Socket beendet die Medien-Sitzung aus der Ferne.
-      Genau dieser Socket ist bei AppControl zum Internet offen, weil P2P der
-      Normalfall ist. Nicht heruntersetzen.
+      MINDESTVERSION 10.0.14 IST EINE SICHERHEITSANFORDERUNG, KEINE KOSMETIK.
+
+      Bis 10.0.13 einschliesslich sind drei aus der Ferne ausloesbare
+      Denial-of-Service-Luecken bekannt - alle auf Sockets, die bei AppControl
+      zum Internet offen sind, weil P2P der Normalfall ist:
+
+        GHSA-jwjp-4649-v8jp  Ein verbundener Peer laesst ueber eine manipulierte
+                             SACK-Chunk-Auswertung den SCTP-Empfangsthread
+                             abstuerzen. Die DataChannels sind danach dauerhaft
+                             tot - und damit auch Pause und Stopp.
+        GHSA-pfvm-w89x-94jw  Ein fehlerhaftes UDP-Datagramm beendet die
+                             Empfangsschleife des TURN-Servers.
+        GHSA-28gm-jrmw-xx93  (aelter, behoben ab 10.0.9) Manipuliertes UDP-Paket
+                             auf dem RTP/ICE-Socket beendet die Medien-Sitzung.
+
+      Die ersten beiden sind ab 10.0.14 behoben; 10.0.15 ist die neueste Fassung
+      derselben Patch-Reihe. Nicht heruntersetzen.
+
+      Was die erste Meldung konkret bedeutet: Sind die DataChannels tot, kommen
+      weder Eingaben des Viewers noch Zustandsmeldungen des Hosts durch. Der
+      Host kann die Sitzung weiterhin beenden - Not-Aus und Stopp-Knopf wirken
+      lokal und haengen an keiner Verbindung. Der Viewer erfaehrt davon dann
+      allerdings nichts mehr und sieht nur ein eingefrorenes Bild.
+
+      Deshalb steht das Audit hier auf streng, mit Warnungen als Fehlern: Bei
+      einem Werkzeug, dessen Sockets zum Internet offen stehen, ist ein Restore,
+      der bei neuen Meldungen stehen bleibt, das gewuenschte Verhalten. Der Preis
+      ist, dass ein Build ohne Codeaenderung rot werden kann - genau so ist diese
+      Meldung aufgetaucht. Die Antwort darauf ist anheben, nicht unterdruecken.
     -->
-    <PackageReference Include="SIPSorcery" Version="10.0.13" />
+    <PackageReference Include="SIPSorcery" Version="10.0.15" />
 
     <!-- Krypto: duenner Wrapper ueber libsodium. Gegenstueck zu swift-crypto im Viewer. -->
     <!--
