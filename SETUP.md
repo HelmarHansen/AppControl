@@ -10,18 +10,19 @@ Praktische Schritt-für-Schritt-Anleitung. Ausführliche Hintergründe:
 | Schritt | Rechner | Zustand |
 |---|---|---|
 | 1. Signaling-Server | Cloud / VPS | ✅ **läuft sofort** |
-| 2. Mac-Viewer bauen | Mac | ✅ **baut und startet sofort** |
-| 3. Windows-Host bauen | Windows | ⚠️ **kompiliert, startet aber nicht** — zwei Stellen fehlen |
-| 4. Erste Verbindung | beide | ⛔ **blockiert durch Schritt 3** |
+| 2. Mac-Viewer bauen | Mac | ✅ **baut, testet und startet** |
+| 3. Windows-Host bauen | Windows | ✅ **baut, testet und startet** |
+| 4. Erste Verbindung | beide | ⚠️ **am Code nichts offen — aber noch nie auf echter Hardware erprobt** |
 
-Der Host wirft beim Start `NotImplementedException` in `D3D11Helper.CreateDevice()`.
-Das ist kein Fehler, sondern eine bewusst offene Stelle mit Implementierungsleitfaden
-im Quelltext — siehe [`docs/07-roadmap.md` §7.1](docs/07-roadmap.md).
+Alle vier ursprünglich markierten Lücken sind geschlossen: Direct3D-Geräteerstellung,
+H.264-Encoder, Live-Vorschau im App-Picker und Zeigerform. Die CI baut und testet
+beide Clients grün.
 
-**Schritt 1 und 2 kannst du trotzdem jetzt schon machen.** Sie sind unabhängig und
-danach abgehakt.
-
----
+Was das NICHT heißt: Ein CI-Runner hat weder GPU noch Bildschirm noch eine echte
+Netzwerkverbindung zwischen zwei Rechnern. Der erste Lauf auf euren beiden Maschinen
+ist der eigentliche Test. Am wahrscheinlichsten hakt es beim Encoder (Bild bleibt
+schwarz) oder bei ICE/TURN (Verbindung steht, aber ohne P2P-Pfad) — beides unten
+mit Log-Hinweisen versehen.
 
 ## Schritt 1 — Signaling-Server (10 Minuten)
 
@@ -130,13 +131,12 @@ swift test          # übersetzt den Code und prüft Krypto, Protokoll, Tastenab
 Der erste Lauf lädt `WebRTC.xcframework` (~250 MB) — das dauert 10–15 Minuten
 und passiert genau einmal.
 
-> **`swift build -c release` schlägt derzeit beim Linken fehl.** Der Swift-Code
-> übersetzt vollständig, aber das Linken der ausführbaren Datei findet
-> `RTCMTLNSVideoView` aus dem WebRTC-Framework nicht. Der dokumentierte Weg,
-> `stasel/WebRTC` zu nutzen, ist ein **Xcode-App-Projekt**, das das Framework
-> einbettet und signiert — und das brauchst du für ein `.app` mit Icon und
-> Info.plist ohnehin. Anleitung:
-> [`Packaging/README.md`](viewer-macos/Packaging/README.md).
+`swift build -c release` linkt inzwischen sauber: Der Viewer rendert Video über
+einen eigenen `CAMetalLayer`-Renderer statt über `RTCMTLNSVideoView`, das im
+macOS-Slice des WebRTC-Frameworks fehlte. Für ein `.app` mit Icon und Info.plist
+(die den Erklärungstext für die Bedienungshilfen enthält) brauchst du trotzdem ein
+Xcode-App-Projekt, das dieses SwiftPM-Paket einbindet — reine Paketierung, kein
+offener Fehler. Anleitung: [`Packaging/README.md`](viewer-macos/Packaging/README.md).
 
 ### Tests
 
