@@ -2,7 +2,10 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using AppControl.Host.Encoding;
+// VideoFormat und VideoCodecsEnum leben ab SIPSorcery 10 in
+// SIPSorceryMedia.Abstractions, nicht mehr in SIPSorcery.Net.
+using SIPSorceryMedia.Abstractions;
+using AppControl.Host.Media;
 
 namespace AppControl.Host.Net;
 
@@ -37,11 +40,19 @@ public sealed class PeerConnectionManager : IAsyncDisposable
 
     private uint _rtpTimestamp;
 
+    // CS0067 ist hier bewusst unterdrueckt: KeyframeRequested und
+    // BitrateEstimateChanged gehoeren zum Vertrag dieser Klasse und werden vom
+    // SessionController bereits abonniert. Ausgeloest werden sie erst, wenn die
+    // RTCP-Auswertung in OnReceiveReport ausimplementiert ist (dort als
+    // PLATZHALTER markiert). Die Events jetzt zu entfernen wuerde den
+    // Verdrahtungscode im Controller unnoetig aendern und spaeter zurueckbauen.
+#pragma warning disable CS0067
     public event Action<string>? ControlMessageReceived;
     public event Action<byte[]>? InputDataReceived;
     public event Action<RTCPeerConnectionState>? ConnectionStateChanged;
     public event Action? KeyframeRequested;
     public event Action<int>? BitrateEstimateChanged;
+#pragma warning restore CS0067
 
     public PeerConnectionManager(ILogger<PeerConnectionManager> log) => _log = log;
 
@@ -65,7 +76,9 @@ public sealed class PeerConnectionManager : IAsyncDisposable
         // H.264 im Passthrough: SIPSorcery packetisiert nur, kodiert nicht.
         // Unser Media-Foundation-Encoder liefert bereits fertige NAL-Units.
         _videoTrack = new MediaStreamTrack(
-            new VideoFormat(VideoCodecsEnum.H264, payloadID: 102),
+            // 102 ist die Payload-ID im SDP. Positional statt benannt: Der
+            // Parametername unterscheidet sich zwischen SIPSorcery-Versionen.
+            new VideoFormat(VideoCodecsEnum.H264, 102),
             MediaStreamStatusEnum.SendOnly);
         _pc.addTrack(_videoTrack);
 

@@ -22,25 +22,159 @@
     <RootNamespace>AppControl.Host</RootNamespace>
     <AssemblyName>AppControl</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!--
+      Ersetzt die dpiAware-Eintraege im Manifest, die das WinForms-SDK ablehnt
+      (WFAC010). PerMonitorV2 ist Pflicht: Ohne korrekte DPI-Awareness landen
+      injizierte Klicks auf skalierten Displays daneben.
+    -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>   <!-- Frame-Zugriff ohne Kopie -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!--
+      NuGet-Sicherheitsaudit als Fehler, nicht als Warnung. Ohne das laeuft eine
+      Abhaengigkeit mit bekannter Luecke stillschweigend mit - genau das ist beim
+      ersten CI-Lauf dieses Projekts passiert (SIPSorcery 8.0.11, DoS ueber
+      manipulierte UDP-Pakete auf dem RTP-Socket).
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- WebRTC: rein verwaltet, kein natives Build noetig. Siehe docs/02-tech-stack.md §2.5 -->
-    <PackageReference Include="SIPSorcery" Version="8.0.11" />
+    <!--
+      KOLLISION DER IMPLIZITEN USINGS AUFLOESEN.
+
+      Das Projekt hat UseWPF=true UND UseWindowsForms=true (Letzteres nur wegen
+      NotifyIcon fuer das Tray-Icon). Beide SDKs steuern eigene implizite Usings
+      bei, und die kollidieren:
+
+          Application  ->  System.Windows.Application   vs. System.Windows.Forms.Application
+          Point        ->  System.Windows.Point         vs. System.Drawing.Point
+
+      Statt in jeder betroffenen Datei Alias-Direktiven zu setzen, werden die
+      beiden WinForms-seitigen Usings global entfernt. Die WPF-Bedeutung ist im
+      ganzen Projekt die richtige - WinForms wird nur an zwei Stellen gebraucht
+      (Ui/TrayIcon.cs und Capture/WindowEnumerator.cs), und beide deklarieren
+      ihre Usings ohnehin explizit bzw. qualifizieren voll aus.
+    -->
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      WebRTC: rein verwaltet, kein natives Build noetig. Siehe docs/02-tech-stack.md §2.5
+
+      MINDESTVERSION 10.0.14 IST EINE SICHERHEITSANFORDERUNG, KEINE KOSMETIK.
+
+      Bis 10.0.13 einschliesslich sind drei aus der Ferne ausloesbare
+      Denial-of-Service-Luecken bekannt - alle auf Sockets, die bei AppControl
+      zum Internet offen sind, weil P2P der Normalfall ist:
+
+        GHSA-jwjp-4649-v8jp  Ein verbundener Peer laesst ueber eine manipulierte
+                             SACK-Chunk-Auswertung den SCTP-Empfangsthread
+                             abstuerzen. Die DataChannels sind danach dauerhaft
+                             tot - und damit auch Pause und Stopp.
+        GHSA-pfvm-w89x-94jw  Ein fehlerhaftes UDP-Datagramm beendet die
+                             Empfangsschleife des TURN-Servers.
+        GHSA-28gm-jrmw-xx93  (aelter, behoben ab 10.0.9) Manipuliertes UDP-Paket
+                             auf dem RTP/ICE-Socket beendet die Medien-Sitzung.
+
+      Die ersten beiden sind ab 10.0.14 behoben; 10.0.15 ist die neueste Fassung
+      derselben Patch-Reihe. Nicht heruntersetzen.
+
+      Was die erste Meldung konkret bedeutet: Sind die DataChannels tot, kommen
+      weder Eingaben des Viewers noch Zustandsmeldungen des Hosts durch. Der
+      Host kann die Sitzung weiterhin beenden - Not-Aus und Stopp-Knopf wirken
+      lokal und haengen an keiner Verbindung. Der Viewer erfaehrt davon dann
+      allerdings nichts mehr und sieht nur ein eingefrorenes Bild.
+
+      Deshalb steht das Audit hier auf streng, mit Warnungen als Fehlern: Bei
+      einem Werkzeug, dessen Sockets zum Internet offen stehen, ist ein Restore,
+      der bei neuen Meldungen stehen bleibt, das gewuenschte Verhalten. Der Preis
+      ist, dass ein Build ohne Codeaenderung rot werden kann - genau so ist diese
+      Meldung aufgetaucht. Die Antwort darauf ist anheben, nicht unterdruecken.
+    -->
+    <PackageReference Include="SIPSorcery" Version="10.0.15" />
 
     <!-- Krypto: duenner Wrapper ueber libsodium. Gegenstueck zu swift-crypto im Viewer. -->
-    <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
+    <!--
+      NSec 25.4.0 ist die neueste Fassung mit net8.0-Unterstuetzung; ab 26.x
+      zielt das Paket auf net9.0 und ist mit unserem TFM unvereinbar (NU1202).
+      Beim Anheben des TargetFrameworks auf net9.0 kann NSec mitgezogen werden.
+    -->
+    <PackageReference Include="NSec.Cryptography" Version="25.4.0" />
 
-    <!-- Direct3D/Media-Foundation-Interop fuer Capture und Encoder -->
-    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
-    <PackageReference Include="Vortice.MediaFoundation" Version="3.6.2" />
+    <!--
+      KEINE Wrapper-Bibliothek fuer Direct3D und Media Foundation.
 
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+      Capture/D3D11Helper.cs und Media/MediaFoundationInterop.cs sprechen direkt
+      per P/Invoke und COM-Interop mit den nativen APIs. Die Alternative waere
+      Vortice.* gewesen; dagegen sprach, dass es um eine ueberschaubare Zahl von
+      Aufrufen mit stabilen, dokumentierten Signaturen geht. Eine Abhaengigkeit
+      von ~30 MB dafuer lohnt sich nicht - und bei Interop ist es ohnehin
+      hilfreich, genau zu sehen, was ueber die Grenze geht.
+
+      Der Preis dafuer steht in MediaFoundationInterop.cs: COM loest Methoden
+      ueber ihre Vtable-Position auf, also muessen auch Methoden dastehen, die
+      nie aufgerufen werden. Sie sind dort als Platzhalter markiert.
+    -->
+
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.18" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.18" />
+    <PackageReference Include="System.Text.Json" Version="9.0.18" />
+
+    <!--
+      Diese beiden Pakete kommen transitiv ueber die Abhaengigkeitskette herein,
+      und zwar in Version 4.3.0 - beide mit bekannten Luecken hoher Schwere
+      (GHSA-7jgj-8wvc-jh57, GHSA-cmhx-cq75-c4mj). Auf .NET 8 liefert die Laufzeit
+      die eigentliche Implementierung, die Pakete sind nur noch Kompatibilitaets-
+      huellen; ausnutzbar ist die Luecke dort nicht.
+
+      Trotzdem werden hier die gepatchten Fassungen erzwungen, statt die Warnung
+      per NoWarn stummzuschalten: Eine unterdrueckte Meldung sieht beim naechsten
+      Mal genauso aus wie eine echte, und dann prueft sie niemand mehr.
+    -->
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+
+    <!--
+      Dritte Huelle derselben Kette: System.Net.Http 4.3.4 zieht
+      System.Private.Uri 4.3.0 nach, und das hat drei eigene Meldungen
+      (GHSA-5f2m-466j-3848, GHSA-xhfc-gr8f-ffwc, GHSA-x5qj-9vmx-7g6g).
+      4.3.2 ist die gepatchte Fassung.
+
+      Dass hier drei Pakete einzeln festgenagelt werden muessen, ist kein
+      Zufall: Es sind alles Kompatibilitaetshuellen aus der .NET-Core-1.x-Zeit,
+      die auf .NET 8 nur noch auf die Laufzeit verweisen. Ausnutzbar ist dort
+      nichts - aber das Audit sieht Paketversionen, nicht Aufrufwege, und das
+      ist die richtige Voreinstellung: Lieber drei erklaerte Zeilen als eine
+      abgeschaltete Pruefung.
+
+      Nebenwirkung, die man kennen sollte: Mit NuGetAuditLevel=low und
+      TreatWarningsAsErrors kann ein Build ohne Codeaenderung rot werden, wenn
+      eine neue Meldung veroeffentlicht wird. Genau so ist dieser hier
+      aufgetaucht. Das ist gewollt.
+    -->
+    <PackageReference Include="System.Private.Uri" Version="4.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      SecureChannel.SealWithFixedNonce ist absichtlich internal: Es setzt Zaehler
+      und Salt von aussen und waere im Produktivcode ein Fussangel - eine
+      wiederverwendete Nonce bricht ChaCha20-Poly1305 vollstaendig.
+
+      Die Testvektoren lassen sich ohne diesen Zugang aber nicht bitgenau
+      nachrechnen, und genau dieser Vergleich ist der Zweck von
+      CryptoVectorTests. Also internal bleiben und dem Testprojekt oeffnen,
+      statt die Methode public zu machen.
+    -->
+    <InternalsVisibleTo Include="AppControl.Host.Tests" />
   </ItemGroup>
 
   <ItemGroup>

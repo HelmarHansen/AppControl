@@ -15,7 +15,12 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <!--
+      Muss mindestens der Version entsprechen, die SIPSorcery transitiv anzieht.
+      Eine niedrigere Pinnung ist ein Paket-Downgrade (NU1605) und bricht den
+      Restore der gesamten Solution.
+    -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.18" />
   </ItemGroup>
 
   <ItemGroup>

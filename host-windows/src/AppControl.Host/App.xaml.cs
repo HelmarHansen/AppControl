@@ -3,7 +3,7 @@ using AppControl.Host.Audit;
 using AppControl.Host.Capture;
 using AppControl.Host.Config;
 using AppControl.Host.Core;
-using AppControl.Host.Encoding;
+using AppControl.Host.Media;
 using AppControl.Host.Input;
 using AppControl.Host.Security;
 using AppControl.Host.Ui;
@@ -166,7 +166,7 @@ public partial class App : Application
     {
         if (_state.Current.State is not (SessionState.Sharing or SessionState.Paused)) return;
 
-        var picker = new AppPickerWindow();
+        var picker = new AppPickerWindow(_loggerFactory);
         if (picker.ShowDialog() == true && picker.SelectedScope is not null)
         {
             _state.ChangeScope(picker.SelectedScope);

@@ -11,14 +11,22 @@ dann Viewer.
 |---|---|
 | `signaling/` | **Vollständig lauffähig.** `npm test` → 27 Tests grün. |
 | `tools/crypto-vectors/` | **Vollständig lauffähig.** `node verify.mjs` → 10 Prüfungen grün. |
-| `tools/consistency/` | **Vollständig lauffähig.** `python3 check.py` → 52 Prüfungen grün. |
-| `host-windows/` | **Gerüst mit markierten Lücken.** Zustandsmaschine, Gates, Krypto, UI und Protokoll sind vollständig. Drei Stellen sind als Implementierungsleitfaden ausgeführt statt fertig: `D3D11Helper.CreateDevice()`, `MediaFoundationH264Encoder` und `WindowThumbnailProvider`. Bis die erste steht, startet die Anwendung nicht. |
-| `viewer-macos/` | **Gerüst mit einer Lücke.** Alles außer der Cursorform-Übernahme ist ausgeführt; die Abhängigkeit `stasel/WebRTC` muss beim ersten Build geladen werden. |
+| `tools/consistency/` | **Vollständig lauffähig.** `python3 check.py` → 61 Prüfungen grün. |
+| `host-windows/` | **Vollständig ausgeführt, auf Hardware unerprobt.** Zustandsmaschine, Gates, Krypto, UI, Protokoll, D3D-Geräteerstellung, Media-Foundation-Encoder, Live-Vorschau im App-Picker und Zeigerform-Meldung — alles vorhanden. |
+| `viewer-macos/` | **Vollständig ausgeführt, auf Hardware unerprobt.** Rendering, Eingabe, Krypto und Zeigerform-Übernahme sind vorhanden. Die Abhängigkeit `stasel/WebRTC` wird beim ersten Build geladen (~250 MB). |
 
-Die Lücken sind bewusst dort, wo der Code reine Interop-Mechanik ist (Media
-Foundation, D3D11) — nicht in der Logik, die AppControl ausmacht. Jede trägt einen
-schrittweisen Leitfaden im Kommentar. Siehe [`07-roadmap.md`](07-roadmap.md) für
-die Reihenfolge und den geschätzten Aufwand.
+### Was „auf Hardware unerprobt“ heißt
+
+Die CI **übersetzt** beide Clients und führt die Tests aus, die ohne Gerät
+auskommen — Krypto, Eingabekodierung, Gates, Bitstream-Auswertung. Was sie nicht
+kann: einen Bildschirm erfassen, einen Hardware-Encoder ansprechen oder Eingaben
+injizieren. Ein GitHub-Runner hat weder GPU noch Sitzung.
+
+Das betrifft vor allem `MediaFoundationH264Encoder`: Der Code ist vollständig,
+aber die erste Inbetriebnahme auf echter Hardware steht aus. Erwartbare
+Stolpersteine sind dort dokumentiert, wo sie auftreten — insbesondere die
+Reihenfolge von `SetInputType`/`SetOutputType`, die zwischen Video-Processor und
+Encoder vertauscht ist. Testfall O1 in §6.6 ist der erste, der das prüft.
 
 ---
 
@@ -389,7 +397,8 @@ abzuarbeiten — sie sind der eigentliche Abnahmetest des Projekts.
 | Symptom | Ursache | Lösung |
 |---|---|---|
 | Host: „Windows.Graphics.Capture wird nicht unterstützt" | Windows älter als 1803 | Aktualisieren, oder Desktop-Duplication-Fallback implementieren (siehe Roadmap) |
-| Host startet nicht, `NotImplementedException` in `D3D11Helper` | Der Platzhalter ist noch nicht ausgefüllt | Siehe Leitfaden in `Capture/D3D11Helper.cs` |
+| Host startet nicht, Meldung über fehlendes Direct3D-11-Gerät | Grafiktreiber defekt oder VM ohne GPU-Durchreichung | `dxdiag` prüfen. WARP greift automatisch ein, wenn die Hardware ausfällt — schlägt auch das fehl, ist das System ungeeignet. |
+| Verbindung steht, Bild bleibt schwarz | Der Encoder liefert keine Pakete | Log auf `ProcessOutput fehlgeschlagen` und `Encoder-Einstellung … nicht unterstuetzt` prüfen. Siehe Testfall O1. |
 | Verbindung bleibt bei „Verbinde …" | Signaling-URL falsch oder Server nicht erreichbar | `curl https://<server>/health` |
 | Beide verbunden, aber kein Bild | ICE findet keinen Pfad | TURN konfigurieren; im Viewer prüfen, ob „Über Relay" steht |
 | SAS-Emojis unterschiedlich | **Möglicher MitM** — oder unterschiedliche Protokollversionen | **Nicht fortfahren.** Erst `python3 tools/consistency/check.py` laufen lassen |

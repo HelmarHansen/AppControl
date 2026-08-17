@@ -41,6 +41,16 @@ final class SessionCoordinator: ObservableObject {
     /// passiert, statt still zu versagen.
     @Published private(set) var lastRejection: ControlMessage.InputRejected?
 
+    /// Zeigerform, die der Host gerade unter seiner Maus hat. Der Viewer setzt
+    /// seinen LOKALEN Zeiger darauf — der des Hosts steckt bereits im Videobild.
+    /// Ohne das schwebt über einem Textfeld ein Pfeil, während das Bild darunter
+    /// einen Textcursor zeigt.
+    @Published private(set) var cursorShape: String = "arrow"
+
+    /// Ob der Host überhaupt einen Zeiger anzeigt. `false` etwa im Vollbild eines
+    /// Spiels, das den Zeiger versteckt.
+    @Published private(set) var cursorVisible = true
+
     let inputCapture = InputCapture()
 
     private let signaling = SignalingClient()
@@ -59,7 +69,9 @@ final class SessionCoordinator: ObservableObject {
     private var pingId = 0
     private var pendingPings: [Int: Int64] = [:]
 
-    var settings = ViewerSettings.load()
+    /// @Published, damit die Einstellungen-Ansicht ueber durchreichende Bindings
+    /// direkt hierher schreiben kann und die UI die Aenderung sofort sieht.
+    @Published var settings = ViewerSettings.load()
 
     init() {
         wireEvents()
@@ -337,11 +349,9 @@ final class SessionCoordinator: ObservableObject {
         case .inputRejected(let rejection):
             lastRejection = rejection
 
-        case .cursor:
-            // TODO(Erweiterung): Cursorform übernehmen, damit der lokale Zeiger
-            // dem entspricht, was auf dem Host unter der Maus liegt (I-Beam über
-            // Textfeldern, Hand über Links). Reines Komfort-Feature.
-            break
+        case .cursor(let cursor):
+            cursorShape = cursor.shape
+            cursorVisible = cursor.visible
 
         case .stats(let incoming):
             stats = incoming

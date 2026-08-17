@@ -2,25 +2,62 @@
 
 ## 7.1 Was zum Laufen fehlt
 
-Vier markierte Stellen trennen dieses Gerüst von einer funktionierenden
-Anwendung. Jede trägt einen schrittweisen Leitfaden im Quelltext.
+Nichts mehr an Code. Die vier ursprünglich markierten Stellen sind alle
+ausgeführt:
 
-| # | Stelle | Aufwand | Blockiert |
-|---|---|---|---|
-| 1 | `Capture/D3D11Helper.CreateDevice()` | ~1 h | **Alles.** Ohne D3D-Device startet der Host nicht. |
-| 2 | `Encoding/MediaFoundationH264Encoder` | ~1–2 Tage | Den Videostrom. Ohne ihn steht die Verbindung, aber es kommt kein Bild an. |
-| 3 | `Capture/WindowThumbnailProvider` | ~4 h | Nur die Live-Vorschau im App-Picker. Auswahl funktioniert auch mit Platzhalter-Kacheln. |
-| 4 | Cursorform im Viewer | ~2 h | Nichts. Reines Komfort-Feature. |
+| Stelle | Stand |
+|---|---|
+| `Capture/D3D11Helper.CreateDevice()` | ✅ P/Invoke, Hardware → WARP-Rückfall |
+| `Media/MediaFoundationH264Encoder` | ✅ Hardware (asynchroner MFT) und Software |
+| `Capture/WindowThumbnailProvider` | ✅ Live-Vorschau über PrintWindow, Aufnahme im Hintergrund |
+| Cursorform im Viewer | ✅ `CursorMonitor` auf dem Host, `NSCursor`-Rects im Viewer |
 
-**Empfohlene Reihenfolge:** 1 → 2 → 3 → 4. Nach Schritt 2 ist das System
-vollständig benutzbar; 3 und 4 sind Politur.
+Zwei Entscheidungen dabei sind erklärungsbedürftig und stehen jeweils im Code:
 
-Zu Schritt 2, weil er der größte ist: Der Leitfaden in
-`MediaFoundationH264Encoder.cs` ist in sieben Schritten ausgeführt. Der
-kritischste ist Schritt 2 (D3D-Device-Manager an den MFT übergeben) — ohne ihn
-läuft alles über den Systemspeicher, und die gesamte Zero-Copy-Architektur aus
-`CaptureEngine` ist wirkungslos. Der Unterschied ist etwa Faktor 3 in der
-CPU-Last bei 1080p60.
+**Die Vorschau nimmt nicht WGC.** Naheliegend wäre gewesen, für die Kacheln
+denselben Weg zu nehmen wie für den Stream. Das wäre falsch: WGC lässt Windows
+einen gelben Rahmen um jedes erfasste Fenster zeichnen. Im Picker wären das
+zwanzig gelb umrandete Fenster gleichzeitig — bevor überhaupt jemand zugestimmt
+hat. Das sähe aus wie ein Fehler und würde den Rahmen als Signal entwerten: Wer
+ihn ständig sieht, hört auf, ihn zu lesen. Die Vorschau nimmt deshalb
+`PrintWindow`, bleibt rein lokal und erzeugt keine Sitzung.
+
+**Der Viewer zeigt zwei Zeiger.** Der Zeiger des Hosts ist Teil des Videobildes,
+der lokale reagiert ohne Netzverzögerung. Beide zu zeigen ist gewollt — bei guter
+Verbindung liegen sie übereinander, bei schlechter sieht man die Latenz. Was
+nicht sein soll, ist dass sie *unterschiedlich aussehen*; genau das behebt die
+`cursor`-Nachricht.
+
+### Was stattdessen aussteht: die erste Inbetriebnahme
+
+Der Encoder ist vollständig geschrieben, aber nie auf echter Hardware gelaufen —
+eine CI hat weder GPU noch Bildschirm. Das ist keine Lücke im Code, sondern eine
+im Wissen darüber, ob er stimmt. Die wahrscheinlichsten Fundstellen beim ersten
+Lauf, nach Erfahrung mit Media Foundation geordnet:
+
+1. **Reihenfolge der Medientypen.** Der Video-Processor will erst den Eingabe-,
+   dann den Ausgabetyp; der Encoder genau andersherum. Verwechselt man es,
+   antwortet Media Foundation mit `MF_E_TRANSFORM_TYPE_NOT_SET` statt mit etwas
+   Verständlichem.
+2. **Der D3D-Device-Manager.** Ohne ihn läuft alles über den Systemspeicher.
+   Es *funktioniert* dann — nur mit etwa dreifacher CPU-Last bei 1080p60. Das
+   Log sagt es (`arbeitet ohne D3D-Device-Manager`), der Bildschirm nicht.
+3. **Herstellerabhängige Codec-Regler.** Nicht jeder Treiber kennt jeden Wert.
+   Deshalb wird jeder einzeln und fehlertolerant gesetzt: Ein Encoder ohne
+   `QualityVsSpeed` ist immer noch ein Encoder.
+
+### Offen auf der Viewer-Seite: Target-Aufteilung
+
+Der macOS-Viewer ist ein einziges SwiftPM-Target. Ihn in ein WebRTC-freies
+Bibliotheks-Target (Krypto, Protokoll, Eingabekodierung) und ein App-Target zu
+teilen, wäre die sauberere Struktur: Die CI prüfte dann die testbare Logik, ohne
+ein 250-MB-Framework zu linken.
+
+Bewusst zurückgestellt. Der Anlass war ein Linkfehler — `RTCMTLNSVideoView` fehlt
+im macOS-Slice des WebRTC-Frameworks —, und der ist inzwischen anders gelöst:
+`Video/MetalVideoRenderer.swift` rendert selbst über `CAMetalLayer`. Die
+Aufteilung nachzuholen hieße, rund 150 Deklarationen auf `public` zu heben; das
+ist viel mechanische Änderung an Code, der ohne sie genauso funktioniert.
 
 ---
 

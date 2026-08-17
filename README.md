@@ -118,6 +118,7 @@ dotnet run --project src/AppControl.Host
 cd viewer-macos && swift build -c release && .build/release/AppControlViewer
 ```
 
+Schritt für Schritt auf beiden Rechnern: [`SETUP.md`](SETUP.md).
 Ausführlich, inklusive TLS-Deployment und TURN:
 [`docs/06-build-and-run.md`](docs/06-build-and-run.md).
 
@@ -128,7 +129,7 @@ Ausführlich, inklusive TLS-Deployment und TURN:
 ```bash
 cd signaling && npm test                    # 27 Tests — Räume, Protokoll, E2E
 node tools/crypto-vectors/verify.mjs        # 10 Prüfungen — Handshake, AEAD
-python3 tools/consistency/check.py          # 52 Prüfungen — C# ↔ Swift ↔ JS
+python3 tools/consistency/check.py          # 61 Prüfungen — C# ↔ Swift ↔ JS
 cd host-windows && dotnet test              # Krypto, Gates, Decoder, HID
 cd viewer-macos && swift test               # Krypto, Encoder, HID
 ```
@@ -146,10 +147,10 @@ Kapitel 3.
 |---|---|
 | Signaling-Server | ✅ vollständig, 27 Tests grün |
 | Krypto-Referenz + Vektoren | ✅ vollständig, 10 Prüfungen grün |
-| Konsistenz-Check | ✅ vollständig, 52 Prüfungen grün |
+| Konsistenz-Check | ✅ vollständig, 61 Prüfungen grün |
 | Host: Zustand, Gates, Krypto, UI, Protokoll | ✅ ausgeführt |
-| Host: D3D-Device, H.264-Encoder, Live-Vorschau | 🔨 Leitfaden im Quelltext, siehe [Roadmap](docs/07-roadmap.md) |
-| Viewer | ✅ ausgeführt bis auf Cursorform-Übernahme |
+| Host: D3D-Device, H.264-Encoder, Live-Vorschau, Zeigerform | ✅ ausgeführt — auf Hardware noch unerprobt, siehe [Roadmap](docs/07-roadmap.md) |
+| Viewer | ✅ ausgeführt — auf Hardware noch unerprobt |
 
 Die offenen Stellen liegen bewusst dort, wo der Code reine Interop-Mechanik ist
 (Media Foundation, D3D11) — nicht in der Logik, die AppControl ausmacht. Jede

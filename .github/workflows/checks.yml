@@ -1,0 +1,144 @@
+name: Prüfungen
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# Läuft ein neuer Push, während der alte noch prüft: den alten abbrechen.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ── Alles, was ohne Windows oder macOS läuft ────────────────────────────────
+  plattformunabhaengig:
+    name: Signaling · Krypto · Konsistenz
+    runs-on: ubuntu-latest
+    # Alle vier Prüfungen zusammen laufen in unter einer Minute. Zehn Minuten
+    # sind reichlich Puffer und brechen trotzdem früh ab, wenn ein Runner hängt.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: signaling/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Abhängigkeiten
+        run: |
+          cd signaling && npm ci
+          pip install jsonschema
+
+      - name: Signaling-Server
+        run: cd signaling && npm test
+
+      - name: Krypto-Testvektoren
+        run: node tools/crypto-vectors/verify.mjs
+
+      - name: Implementierungs-Konsistenz
+        # Vergleicht Emoji-Tabellen, Nachrichtentyp-Bytes, Header-Layouts und
+        # HID-Abbildungen zwischen C#, Swift und JS — und prüft die
+        # Transparenz-Zusicherungen aus docs/03. Ein Commit, der den
+        # Consent-Default umdreht oder den gelben Rahmen abschaltet, wird hier rot.
+        run: python3 tools/consistency/check.py
+
+      - name: JSON-Schemas
+        run: python3 tools/consistency/schema_check.py
+
+  # ── Host: der eigentliche Grund für diese CI ────────────────────────────────
+  host-windows:
+    name: Windows-Host bauen und testen
+    runs-on: windows-latest
+    # NuGet-Restore braucht kalt ~60 s, Build und Tests je unter einer Minute.
+    # Der Wert fängt vor allem hängende Runner ab: Am 6.8. verbrachte dieser Job
+    # zehn Minuten in "Set up job", weil GitHubs Action-Download-Dienst mit
+    # "Service Unavailable" antwortete - Zeit, die niemandem nützt.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: NuGet-Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('host-windows/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Wiederherstellen
+        run: dotnet restore host-windows/AppControl.Host.sln
+
+      - name: Bauen
+        # TreatWarningsAsErrors steht bereits in der csproj — eine Warnung
+        # bricht den Build. Das ist bei Interop-Code (P/Invoke, COM) besonders
+        # nützlich, weil dort viele Fehler als Warnung beginnen.
+        run: dotnet build host-windows/AppControl.Host.sln -c Release --no-restore
+
+      - name: Testen
+        run: dotnet test host-windows/AppControl.Host.sln -c Release --no-build --verbosity normal
+
+      - name: Single-File-EXE erzeugen
+        run: >
+          dotnet publish host-windows/src/AppControl.Host/AppControl.Host.csproj
+          -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -o publish
+
+      - name: EXE als Artefakt ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppControl-Host-win-x64
+          path: publish/
+          retention-days: 14
+
+  # ── Viewer ─────────────────────────────────────────────────────────────────
+  viewer-macos:
+    name: macOS-Viewer bauen und testen
+    runs-on: macos-14
+    # Großzügiger als die anderen: Ohne Cache lädt SwiftPM das ~250 MB große
+    # WebRTC.xcframework herunter, was allein zehn Minuten dauern kann.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SwiftPM-Cache
+        # WebRTC.xcframework ist ~250 MB. Ohne Cache dauert jeder Lauf
+        # 10-15 Minuten allein für den Download.
+        uses: actions/cache@v4
+        with:
+          path: viewer-macos/.build
+          key: spm-${{ runner.os }}-${{ hashFiles('viewer-macos/Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      # ── Warum hier kein RTCMTLNSVideoView mehr auftaucht ───────────────────
+      #
+      # Bis Commit 813fafb scheiterte dieser Schritt am Linken - nicht am
+      # Uebersetzen. Der Swift-Code ging vollstaendig durch, exakt ein Symbol
+      # blieb offen:
+      #
+      #   Undefined symbols: _OBJC_CLASS_$_RTCMTLNSVideoView
+      #
+      # Jede andere WebRTC-Klasse loeste auf. Die Metal-Ansicht ist im
+      # macOS-Slice der xcframework-Distribution schlicht nicht enthalten.
+      # Explizite linkerSettings halfen deshalb nicht, und `swift test` statt
+      # `swift build` auch nicht - swift test linkt das Executable ebenfalls.
+      #
+      # Video/MetalVideoRenderer.swift ersetzt die Klasse durch eine eigene
+      # RTCVideoRenderer-Implementierung auf CAMetalLayer und CIContext. Damit
+      # haengt der Build nur noch an Apple-Systemframeworks.
+      #
+      # Kein continue-on-error: Ein Fehlschlag, den niemand mehr sieht, ist
+      # schlimmer als einer, der stoert.
+      - name: Übersetzen und testen
+        run: cd viewer-macos && swift build && swift test
